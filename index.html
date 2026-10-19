@@ -960,6 +960,7 @@ function scheduleBar(t0){
   const T=tune,bar=barNum,sec=bar>>2,bi=bar&3,cfg=MODES[T.mode];
   ensureBuses(T);
   bus=T.bus;drumBus=T.dbus;
+  mediaAtBar(T,bar,t0);
   const e=60/T.bpm/2;
   const st=s=>t0+s*e+((s&1)?T.swing*e:0);
   const ending=(bar===31&&S.auto);
@@ -1090,21 +1091,34 @@ function keepAlive(go){
     if(go){const p=keepEl.play();if(p&&p.catch)p.catch(()=>{});}else keepEl.pause();
   }catch(e){}
 }
-function updateMediaSession(){
+let metaTune=null;
+function updateMediaSession(T){
+  T=T||shown||tune;
   try{
     if(!('mediaSession' in navigator))return;
-    if(typeof MediaMetadata!=='undefined')navigator.mediaSession.metadata=new MediaMetadata({title:tune.name,artist:'Looplight',album:FLIP_NAME[mode],artwork:[{src:'icons/icon-192.png',sizes:'192x192',type:'image/png'},{src:'icons/icon-512.png',sizes:'512x512',type:'image/png'}]});
+    if(metaTune!==T&&typeof MediaMetadata!=='undefined'){
+      navigator.mediaSession.metadata=new MediaMetadata({title:T.name,artist:'Looplight',album:FLIP_NAME[T.mode],artwork:[{src:'icons/icon-192.png',sizes:'192x192',type:'image/png'},{src:'icons/icon-512.png',sizes:'512x512',type:'image/png'}]});
+      metaTune=T;
+    }
     navigator.mediaSession.playbackState=playing?'playing':'paused';
   }catch(e){}
-  updateMediaPosition(lastBar);
+  updateMediaPosition(lastBar,T);
 }
 /* the lock screen shows one whole tune: its real length (32 bars) and where we are in it, not the length of the silent helper loop */
-function updateMediaPosition(bar){
+function updateMediaPosition(bar,T){
+  T=T||shown;
   try{
-    if(!('mediaSession' in navigator)||!navigator.mediaSession.setPositionState||!shown)return;
-    const barSec=60/shown.bpm*4,dur=32*barSec;
+    if(!('mediaSession' in navigator)||!navigator.mediaSession.setPositionState||!T)return;
+    const barSec=60/T.bpm*4,dur=32*barSec;
     navigator.mediaSession.setPositionState({duration:dur,playbackRate:1,position:Math.min(dur,Math.max(0,bar*barSec))});
   }catch(e){}
+}
+/* the screen-drawing loop stops while the phone is locked, so the lock screen is also updated from the audio schedule: one timer per bar, fired when that bar is heard */
+let mediaGen=0;
+function mediaAtBar(T,bar,t0){
+  if(!ac)return;
+  const gen=mediaGen,ms=Math.max(0,(t0-ac.currentTime-(ac.outputLatency||0))*1000);
+  setTimeout(()=>{if(gen!==mediaGen||!playing)return;lastBar=bar;updateMediaSession(T);},ms);
 }
 function initMediaSession(){
   if(!('mediaSession' in navigator))return;
@@ -1123,6 +1137,7 @@ function nextNow(){
   live.forEach(T=>{try{holdGain(T.bus.gain,now);T.bus.gain.setTargetAtTime(0,now,0.45);holdGain(T.dbus.gain,now);T.dbus.gain.setTargetAtTime(0,now,0.45);}catch(e){}});
   live.length=0;
   tune=fresh;barNum=0;nextBarTime=now+0.3;uiQ.length=0;
+  mediaGen++;lastBar=0;updateMediaSession(fresh);
   if(!playing)start();
 }
 
@@ -1506,7 +1521,7 @@ window.__cozy={smp:()=>smpState,reduction:()=>({comp:comp_&&comp_.reduction,lim:
 })();
 
 /* installable app: the page is fetched fresh whenever you are online and kept for offline use */
-const BUILD='looplight-v9';
+const BUILD='looplight-v10';
 function showUpdateNotice(){
   if(document.getElementById('updNote'))return;
   const d=document.createElement('div');d.id='updNote';d.className='updnote';d.setAttribute('role','status');
