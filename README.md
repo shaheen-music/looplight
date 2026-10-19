@@ -7,4 +7,4 @@ Open it here: https://shaheen-music.github.io/looplight/
 
 ## Credits
 
-The Jazz Noir saxophone uses tenor-sax notes from the FluidR3_GM soundfont (via gleitz/midi-js-soundfonts), re-encoded as small mono MP3s.
+The Jazz Noir saxophone uses tenor-sax notes from the FluidR3_GM soundfont (via gleitz/midi-js-soundfonts), re-encoded as small mono MP3s. The Silk & Bamboo flute and erhu (violin) notes come from the same soundfont.
