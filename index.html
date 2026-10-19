@@ -193,8 +193,8 @@ const MODES={
     plan:['Jo','Ha','Ha 2','Kyu','Kyu 2','Return','Variation','Coda'],
     adj:['Quiet','Autumn','Moonlit','Misty','Silent','Distant','Willow','Winter','Morning','Gentle','Falling','Stone'],
     noun:['Sakura','Temple','Garden','Crane','Lantern','Bamboo','Pond','Mountain','Koto','Teahouse','Moon','River']},
-  noir:{title:'Jazz Noir',tagline:'Tenor sax · piano · a smoky late-night room',flipTo:'Flip to Cozy',bpm:[66,80],swing:[0.30,0.34],minorP:0.3,
-    voices:['sax'],trim:1.1,reverb:0.5,tone:3600,whoosh:false,hatFrom:99,kickFrom:99,hatMul:1,kickV:1,snare:false,ghost:false,bassDur:[2,2],
+  noir:{title:'Jazz Noir',tagline:'Tenor sax · piano · a smoky late-night room',flipTo:'Flip to Cozy',bpm:[60,72],swing:[0.30,0.34],minorP:0.5,
+    voices:['sax'],trim:1.1,reverb:0.55,tone:3200,whoosh:false,hatFrom:99,kickFrom:99,hatMul:1,kickV:1,snare:false,ghost:false,bassDur:[2,2],
     plan:['Intro','Head','Head 2','Bridge','Bridge 2','Return','Solo','Outro'],
     adj:['Smoky','Midnight','Velvet','Blue','Lonely','Last','Rainy','Slow','Amber','Hushed','Neon','Faded'],
     noun:['Lounge','Alley','Corner','Cigar','Window','Boulevard','Platform','Hotel','Streetlight','Stairwell','Taxi','Last Call']}
@@ -1253,7 +1253,7 @@ function scheduleNoirBar(T,t0,bar,sec,bi,e,st,ending){
   T.comp[bar].forEach((s,i)=>{
     const t=st(s)+hum(),first=s===0,v=(first?0.5:0.36)*(intro||outro?0.8:1);
     const n=(S.lite&&!first)?3:vox.length;
-    for(let k=0;k<n;k++)voicePianoNoir(t+k*0.017,mtof(vox[vox.length-n+k]),Math.max(0.2,v-k*0.03));
+    for(let k=0;k<n;k++)voicePianoNoir(t+k*0.03,mtof(vox[vox.length-n+k]),Math.max(0.2,v-k*0.03));
   });
   /* upright bass: two-feel in the quiet parts, walking where the tune opens up */
   {
@@ -1267,6 +1267,11 @@ function scheduleNoirBar(T,t0,bar,sec,bi,e,st,ending){
     brushSweep(st(2),dv*0.8);brushSweep(st(6),dv*0.8);
     if(!S.lite&&sec>=1&&sec<=6)brushFoot(st(2),0.8*dv);
     if(S.bass&&sec>=1&&sec<=6)[0,4].forEach(s=>brushKick(st(s),0.7));
+  }
+  /* when the sax rests for a bar, the piano answers with a few soft single notes */
+  if(sec>=1&&sec<=6&&!S.lite&&!T.mel[sec][bi].length){
+    const top=vox.slice().reverse();
+    [[1,0],[3,1],[5,2],[6,1]].forEach((q,i)=>voicePianoNoir(st(q[0])+hum(),mtof(top[q[1]]+(i===2?0:12)),0.4-i*0.04));
   }
   uiQ.push({t:t0,k:'kick'});
   /* the saxophone */
@@ -1922,7 +1927,7 @@ window.__cozy={smp:()=>smpState,reduction:()=>({comp:comp_&&comp_.reduction,lim:
 })();
 
 /* installable app: the page is fetched fresh whenever you are online and kept for offline use */
-const BUILD='looplight-v14';
+const BUILD='looplight-v15';
 function showUpdateNotice(){
   if(document.getElementById('updNote'))return;
   const d=document.createElement('div');d.id='updNote';d.className='updnote';d.setAttribute('role','status');
