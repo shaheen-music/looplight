@@ -1396,5 +1396,5 @@ window.__cozy={smp:()=>smpState,reduction:()=>({comp:comp_&&comp_.reduction,lim:
 })();
 
 /* installable app: remember the page so it opens fast and offline */
-try{if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&location.hostname!=='localhost'||location.hostname==='localhost'&&'serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});}}catch(e){}
+try{if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)&&location.hostname!=='localhost'||location.hostname==='localhost'&&'serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(()=>{});});}}catch(e){}
 </script>
