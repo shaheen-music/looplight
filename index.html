@@ -1223,7 +1223,7 @@ const playBtn=$('play');
 const ICON_PLAY='<svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1l9 5-9 5z" fill="currentColor"/></svg>';
 const ICON_PAUSE='<svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="3" height="9" rx="1" fill="currentColor"/><rect x="7" y="1.5" width="3" height="9" rx="1" fill="currentColor"/></svg>';
 function renderPlayBtn(){playBtn.innerHTML=playing?ICON_PAUSE+'<span>Pause</span>':ICON_PLAY+'<span>'+(started?'Resume':'Play')+'</span>';updateMediaSession();}
-function renderStatus(){$('status').innerHTML=loadingBand?'<b>Tuning the koto…</b>':playing?'<b>Playing</b>':started?'Paused':'';}
+function renderStatus(){$('status').innerHTML=loadingBand?'<b>Tuning the koto…</b>':'';}
 let shown=null;
 function renderTune(T,bar){
   if(shown!==T){
@@ -1496,7 +1496,7 @@ window.__cozy={smp:()=>smpState,reduction:()=>({comp:comp_&&comp_.reduction,lim:
 })();
 
 /* installable app: the page is fetched fresh whenever you are online and kept for offline use */
-const BUILD='looplight-v7';
+const BUILD='looplight-v8';
 function showUpdateNotice(){
   if(document.getElementById('updNote'))return;
   const d=document.createElement('div');d.id='updNote';d.className='updnote';d.setAttribute('role','status');
