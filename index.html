@@ -86,10 +86,8 @@ h2{margin:0;font:400 clamp(1.7rem,1.2rem + 2.4vw,2.6rem)/1.08 var(--f-display);t
 .vol output{font:400 .8rem/1 var(--f-mono);color:var(--fg);min-width:3ch;text-align:right;font-variant-numeric:tabular-nums}
 input[type=range]{flex:1;min-width:0;height:28px;margin:0;accent-color:var(--lamp);background:transparent}
 .toggles{display:flex;flex-wrap:wrap;align-items:center;gap:8px;flex:1 1 100%}
-.tog{min-height:42px;padding:.5rem 1rem;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted);font:500 .85rem/1 var(--f-body);cursor:pointer}
+.tog{min-height:34px;padding:.35rem .8rem;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--muted);font:500 .74rem/1 var(--f-body);cursor:pointer}
 .tog[aria-pressed="true"]{background:var(--lamp-soft);border-color:var(--lamp);color:var(--lamp)}
-/* the per-side sound toggles (vinyl, rain, street hum, stream and so on) are a little smaller */
-.tog.only-cozy,.tog.only-groove,.tog.only-japan{min-height:34px;padding:.35rem .8rem;font-size:.74rem}
 button:focus-visible,input:focus-visible{outline:2px solid var(--lamp);outline-offset:2px}
 .hint{margin:0;font:400 .76rem/1.6 var(--f-mono);color:var(--muted)}
 kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--line);border-radius:5px;background:var(--surface-2);color:var(--fg)}
