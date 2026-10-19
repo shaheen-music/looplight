@@ -193,7 +193,7 @@ const MODES={
     plan:['Jo','Ha','Ha 2','Kyu','Kyu 2','Return','Variation','Coda'],
     adj:['Quiet','Autumn','Moonlit','Misty','Silent','Distant','Willow','Winter','Morning','Gentle','Falling','Stone'],
     noun:['Sakura','Temple','Garden','Crane','Lantern','Bamboo','Pond','Mountain','Koto','Teahouse','Moon','River']},
-  noir:{title:'Jazz Noir',tagline:'Tenor sax · piano · a smoky late-night room',flipTo:'Flip to Cozy',bpm:[50,57],swing:[0.33,0.33],minorP:0.55,
+  noir:{title:'Jazz Noir',tagline:'Tenor sax · piano · a smoky late-night room',flipTo:'Flip to Cozy',bpm:[64,74],swing:[0.33,0.33],minorP:0.55,
     voices:['sax'],trim:1.1,reverb:0.55,tone:3200,whoosh:false,hatFrom:99,kickFrom:99,hatMul:1,kickV:1,snare:false,ghost:false,bassDur:[2,2],
     plan:['Intro','Head','Head 2','Bridge','Bridge 2','Return','Solo','Outro'],
     adj:['Smoky','Midnight','Velvet','Blue','Lonely','Last','Rainy','Slow','Amber','Hushed','Neon','Faded'],
@@ -270,9 +270,9 @@ function varyPhrase(T,P){
 }
 const KEYS=[0,2,3,5,7,9,10];
 function parseCode(str){
-  const m=/^\s*([0-9a-z]{1,8})\s*[-\s]\s*([0-6])\s*([gjn]?)\s*$/i.exec(str||'');
+  const m=/^\s*([0-9a-z]{1,8})\s*[-\s]\s*([0-6])\s*([gjns]?)\s*$/i.exec(str||'');
   const sf=m&&m[3]?m[3].toLowerCase():'';
-  return m?{seed:parseInt(m[1],36),ki:+m[2],mode:sf==='g'?'groove':sf==='j'?'japan':sf==='n'?'noir':'cozy',text:m[1].toLowerCase()+'-'+m[2]+sf}:null;
+  return m?{seed:parseInt(m[1],36),ki:+m[2],mode:sf==='g'?'groove':(sf==='j'||sf==='s')?'japan':sf==='n'?'noir':'cozy',style:sf==='s'?'sham':'koto',text:m[1].toLowerCase()+'-'+m[2]+sf}:null;
 }
 function compose(prevPc,fixed,m){
   m=fixed?fixed.mode:(m||mode);
@@ -347,6 +347,8 @@ function jPhrase(pool,keyPc,busy,home,motif){
   return {bars:bars,motif:m};
 }
 function composeJapan(prevPc,fixed,seed){
+  const style=fixed?(fixed.style||'koto'):(window.__JSTYLE||(Math.random()<0.75?'sham':'koto'));
+  if(style==='sham')return composeSham(prevPc,fixed,seed);
   const cfg=MODES.japan;
   const scaleName=pick(['yo','ryo','ryo','yo','hirajoshi']),sc=JSCALES[scaleName];
   let ki=rnd(7);
@@ -450,7 +452,7 @@ function noirHold(ch,off,steps,from,v){
 }
 function noirBarPhrase(ch,kind,prev,dir,v){
   let notes=[];
-  if(kind==='full'){const k=pick([5,6,7,8]);notes=noirRun(ch,k,0,dir,prev,v);notes.push(noirHold(ch,k,12-k,notes[k-1].m,v));}
+  if(kind==='full'){const k=pick([6,7,8,9]);notes=noirRun(ch,k,0,dir,prev,v);notes.push(noirHold(ch,k,12-k,notes[k-1].m,v));}
   else if(kind==='echo'){const k=pick([3,4]);notes=noirRun(ch,k,3,dir,prev,v*0.9);notes.push(noirHold(ch,3+k,9-k,notes[k-1].m,v*0.9));}
   else if(kind==='held'){notes=[noirHold(ch,0,pick([6,7,8]),prev,v)];}
   else if(kind==='long'){notes=[noirHold(ch,0,12,prev,v)];}
@@ -530,6 +532,70 @@ function composeNoir(prevPc,fixed,seed){
   const solo=noirSection(cA2,['full','full','full',R()<0.5?'held':'echo'],start+3,1,0.64);
   const outro=noirSection(cA,['full','held','long',''],start,1,0.46);
   T.mel=[hint,headA,headA2,bridge,bridge2,ret,solo,outro];
+  return T;
+}
+
+/* ---- Shamisen style (modelled on a rhythmic shamisen piece): a minor pentatonic with the odd passing note, power-chord strumming in a groove, a lead of short runs that end on long notes, soft bass and light drums ---- */
+const SH_PENT=[0,3,5,7,10];
+const SH_PROG=[[0,0,10,10],[0,10,5,0],[0,0,5,5],[5,7,0,0],[0,10,7,0],[0,0,10,7],[5,5,0,10],[0,8,10,0],[0,10,0,7]];
+const SH_STRUM=[[0,6,8,14],[0,3,6,8,11,14],[0,2,4,6,8,10,12,14],[0,4,7,8,12,15],[0,2,3,4,6,8,10,11,12,14]];
+function shPool(keyPc,lo,hi,pass){
+  const out=[];
+  for(let m=lo;m<=hi;m++){const r=((m-keyPc)%12+12)%12;if(SH_PENT.indexOf(r)>=0||(pass&&r===2))out.push(m);}
+  return out;
+}
+/* one phrase: a run of eighth notes wandering up and down the scale, then a long note on a chord tone, then a rest */
+function shPhrase(pool,keyPc,start,off,k,holdSteps,prog,v){
+  const notes=[];let idx=pool.indexOf(noirNearest(pool,start));
+  const chordAt=step=>(keyPc+prog[Math.min(3,step>>4)])%12;
+  for(let i=0;i<k;i++){
+    const mv=pick([0,0,1,-1,1,-1,2,-2]);
+    idx=clamp(idx+mv,0,pool.length-1);
+    let m=pool[idx];
+    if(R()<0.05){const o=m+(m>60?-12:12);const j=pool.indexOf(o);if(j>=0){idx=j;m=o;}}
+    notes.push({a:off+i*2,d:2,m:m,v:v*(i===0?1.08:0.92+R()*0.1)});
+  }
+  const hs=off+k*2,cr=chordAt(hs),tones=pool.filter(m=>{const r=((m-cr)%12+12)%12;return r===0||r===7||r===3||r===10;});
+  const last=notes[notes.length-1].m,cand=tones.filter(m=>m!==last);
+  const hm=noirNearest(cand.length?cand:pool,last);
+  notes.push({a:hs,d:holdSteps,m:hm,v:v*1.1});
+  return notes;
+}
+function composeSham(prevPc,fixed,seed){
+  const cfg=MODES.japan;
+  let ki=pick([1,1,5,5,3,0,6,4,2]);
+  if(fixed)ki=fixed.ki;else if(KEYS[ki]===prevPc)ki=(ki+1)%7;
+  const keyPc=KEYS[ki];
+  const pa=pick(SH_PROG),pb=pick(SH_PROG),pc=pick(SH_PROG);
+  const prog=[pa,pa,pa,pb,pb,pa,pc,pa];
+  const T={
+    mode:'japan',style:'sham',code:seed.toString(36)+'-'+ki+'s',name:pick(cfg.adj)+' '+pick(cfg.noun),minor:true,keyPc:keyPc,
+    bpm:84+rnd(17),swing:0,melVoice:'sham',bus:null,dbus:null,prog:prog,
+    strumA:pick([0,1,3]),strumB:pick([2,4,3]),lead:[]
+  };
+  const pool=shPool(keyPc,50,71,true),poolHi=shPool(keyPc,57,76,false);
+  const start=pick([55,57,60]);
+  const place=(sec,notes)=>{ /* notes carry absolute 16th-step positions within a four-bar section */
+    const bars=[[],[],[],[]];
+    notes.forEach(n=>{const b=n.a>>4;if(b<4)bars[b].push({s:n.a&15,d:n.d,m:n.m,v:n.v});});
+    return bars;
+  };
+  const phrasePair=(pl,st,v,kLo,kHi,fixedPrev)=>{
+    const p1=shPhrase(pl,keyPc,st,pick([0,2]),kLo+rnd(kHi-kLo+1),pick([8,10,12]),prog[0],v);
+    const p2=shPhrase(pl,keyPc,p1[p1.length-1].m,32+pick([0,2]),kLo+rnd(kHi-kLo+1),pick([8,12,14]),prog[0],v);
+    return p1.concat(p2);
+  };
+  const A=phrasePair(pool,start,0.78,5,7);
+  /* the answer keeps the first phrase and writes a new second phrase */
+  const first=A.filter(n=>n.a<32),second=shPhrase(pool,keyPc,first[first.length-1].m,32+pick([0,2]),5+rnd(3),pick([8,12]),prog[0],0.78);
+  const B=phrasePair(poolHi,start+7,0.84,6,8);
+  const C=phrasePair(pool,start+2,0.8,5,8);
+  /* the intro: slow long notes; the coda: one long note */
+  const intro=[{a:0,d:8,m:noirNearest(pool,start),v:1.0},{a:8,d:6,m:noirNearest(pool,start+2),v:0.95},{a:14,d:18,m:noirNearest(pool,start+3),v:1.0},{a:32,d:8,m:noirNearest(pool,start+2),v:0.95},{a:40,d:6,m:noirNearest(pool,start),v:0.9},{a:46,d:16,m:noirNearest(pool,start+3),v:1.0}];
+  const coda=[{a:0,d:20,m:noirNearest(pool,start),v:0.58}];
+  /* a phrase here runs over two bars, so the second pair of bars sits at steps 32-63; section arrays are four bars of 16 steps */
+  const secs=[intro,A,first.concat(second),B,B,A,C,coda];
+  T.lead=secs.map((n,i)=>place(i,n.map(x=>x)));
   return T;
 }
 
@@ -1128,28 +1194,34 @@ function voiceSax(t,f,dur,v,o){
   const sc=o.scoop?(o.scoop===1?-0.6:-1):0;
   const src=ac.createOscillator();src.type='sawtooth';
   const src2=ac.createOscillator();src2.type='square';src2.detune.value=0;
+  const src3=ac.createOscillator();src3.type='sawtooth';src3.detune.value=7;
+  const sub=ac.createOscillator();sub.type='triangle';
   if(sc){src.frequency.setValueAtTime(f*Math.pow(2,sc/12),t);src.frequency.exponentialRampToValueAtTime(f,t+0.09);src2.frequency.setValueAtTime(f*Math.pow(2,sc/12),t);src2.frequency.exponentialRampToValueAtTime(f,t+0.09);}
   else{src.frequency.setValueAtTime(f,t);src2.frequency.setValueAtTime(f,t);}
-  if(o.fall){const a=t+dur-0.02;[src,src2].forEach(s=>{s.frequency.setValueAtTime(f,a);s.frequency.exponentialRampToValueAtTime(f*Math.pow(2,-1.5/12),a+rel+0.05);});}
+  const sf=sc?f*Math.pow(2,sc/12):f;src3.frequency.setValueAtTime(sf,t);if(sc)src3.frequency.exponentialRampToValueAtTime(f,t+0.09);sub.frequency.setValueAtTime(sf/2,t);if(sc)sub.frequency.exponentialRampToValueAtTime(f/2,t+0.09);
+  if(o.fall){const a=t+dur-0.02;[src,src2,src3].forEach(s=>{s.frequency.setValueAtTime(f,a);s.frequency.exponentialRampToValueAtTime(f*Math.pow(2,-1.5/12),a+rel+0.05);});}
   /* vibrato that starts after the note has settled */
   const vib=ac.createOscillator();vib.frequency.value=4.6+Math.random()*0.8;
   const vg=ac.createGain();vg.gain.setValueAtTime(0,t);vg.gain.setValueAtTime(0,t+Math.min(0.45,dur*0.5));vg.gain.linearRampToValueAtTime(f*0.0035,t+Math.min(0.9,dur*0.9)+0.1);
-  vib.connect(vg);vg.connect(src.frequency);vg.connect(src2.frequency);
+  vib.connect(vg);vg.connect(src.frequency);vg.connect(src2.frequency);vg.connect(src3.frequency);
   const mix=ac.createGain();mix.gain.value=1;
   const g2=ac.createGain();g2.gain.value=0.22;
   src.connect(mix);src2.connect(g2);g2.connect(mix);
+  const g3=ac.createGain();g3.gain.value=0.7;src3.connect(g3);g3.connect(mix);
+  const gs=ac.createGain();gs.gain.value=0.42;sub.connect(gs);gs.connect(mix);
   const lp=ac.createBiquadFilter();lp.type='lowpass';lp.Q.value=0.9;
-  const top=Math.min(1900,Math.max(800,f*4));
+  const top=Math.min(2200,Math.max(900,f*4.5));
   lp.frequency.setValueAtTime(top*0.45,t);lp.frequency.linearRampToValueAtTime(top,t+0.12);lp.frequency.linearRampToValueAtTime(top*0.8,t+dur);
-  const body=ac.createBiquadFilter();body.type='peaking';body.frequency.value=720;body.Q.value=1.1;body.gain.value=5;
-  const hp=ac.createBiquadFilter();hp.type='highpass';hp.frequency.value=120;
+  const body=ac.createBiquadFilter();body.type='peaking';body.frequency.value=650;body.Q.value=0.8;body.gain.value=7;
+  const body2=ac.createBiquadFilter();body2.type='peaking';body2.frequency.value=1150;body2.Q.value=0.9;body2.gain.value=3.5;
+  const hp=ac.createBiquadFilter();hp.type='highpass';hp.frequency.value=85;
   const g=ac.createGain();
-  const pk=0.21*v;
+  const pk=0.19*v;
   g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(pk,t+0.07);
   g.gain.linearRampToValueAtTime(pk*0.82,t+dur);
   g.gain.exponentialRampToValueAtTime(0.0001,t+dur+rel);
-  mix.connect(lp);lp.connect(body);body.connect(hp);hp.connect(g);g.connect(bus);
-  src.start(t);src2.start(t);vib.start(t);src.stop(end+0.05);src2.stop(end+0.05);vib.stop(end+0.05);
+  mix.connect(lp);lp.connect(body);body.connect(body2);body2.connect(hp);hp.connect(g);g.connect(bus);
+  [src,src2,src3,sub,vib].forEach(o=>{o.start(t);o.stop(end+0.05);});
   /* the air in the reed */
   if(!S.lite){
     const n=ac.createBufferSource();n.buffer=noiseBuf;
@@ -1252,6 +1324,78 @@ function scheduleNoirBar(T,t0,bar,sec,bi,e,st12,ending){
   });
   if(on('nvinyl')){const k=rnd(3);for(let i=0;i<k;i++)noiseHit(t0+Math.random()*u*12,0.01,'highpass',2500,0.5,(0.012+Math.random()*0.02)*avF('nvinyl'),drumBus);}
 }
+/* ---- shamisen: a plucked string (Karplus-Strong, tuned exactly by playback rate), a snap of the bachi plectrum, softened so it never gets shrill ---- */
+const shamCache={};
+function shamBuf(m){
+  const sr=ac.sampleRate,key=m+'_'+sr;
+  if(shamCache[key])return shamCache[key];
+  const f=mtof(m),N=Math.max(8,Math.round(sr/f-0.5)),secs=m<48?2.2:(m<60?1.7:1.3),len=Math.floor(sr*secs);
+  const buf=ac.createBuffer(1,len,sr),d=buf.getChannelData(0);
+  const line=new Float32Array(N);let prev=0;
+  for(let i=0;i<N;i++){const w=Math.random()*2-1;prev=prev*0.4+w*0.6;line[i]=prev;}
+  const pp=Math.max(1,Math.round(N*0.13)),e2=new Float32Array(N);
+  for(let i=0;i<N;i++)e2[i]=line[i]-0.7*line[(i+pp)%N];
+  for(let i=0;i<N;i++)line[i]=e2[i];
+  const rho=Math.pow(0.01,N/(sr*(m<48?1.8:1.15)));
+  let idx=0,pk=0;
+  for(let n=0;n<len;n++){
+    const a=line[idx],b=line[(idx+1)%N];
+    d[n]=a;line[idx]=0.5*(a+b)*rho;idx=(idx+1)%N;
+    const x=Math.abs(a);if(x>pk)pk=x;
+  }
+  const g=0.9/Math.max(0.0001,pk),t18=Math.tanh(1.6);
+  for(let n=0;n<len;n++)d[n]=Math.tanh(d[n]*g*1.6)/t18*0.9;
+  buf._f=sr/(N+0.5);
+  shamCache[key]=buf;return buf;
+}
+function voiceSham(t,m,v,dur,bright){
+  const buf=shamBuf(m),src=ac.createBufferSource();src.buffer=buf;
+  src.playbackRate.value=mtof(m)/buf._f;
+  const hp=ac.createBiquadFilter();hp.type='highpass';hp.frequency.value=70;
+  const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=bright?3800:2800;lp.Q.value=0.5;
+  const body=ac.createBiquadFilter();body.type='peaking';body.frequency.value=900;body.Q.value=0.9;body.gain.value=3;
+  const g=ac.createGain(),end=t+Math.max(0.12,dur);
+  g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(0.11*v,t+0.003);
+  g.gain.setValueAtTime(0.11*v,end);g.gain.exponentialRampToValueAtTime(0.0001,end+0.14);
+  src.connect(hp);hp.connect(body);body.connect(lp);lp.connect(g);g.connect(bus);
+  src.start(t);src.stop(end+0.18);
+  if(!S.lite)noiseHit(t,0.03,'bandpass',1700,0.9,0.015*v,bus);
+}
+function scheduleShamBar(T,t0,bar,sec,bi,e,st12,ending){
+  /* a bar is four beats of four sixteenth steps */
+  const u=60/T.bpm/4,st=s=>t0+s*u;
+  const hum=()=>(Math.random()-0.5)*0.014;
+  const d=T.prog[sec][bi],rootPc=(T.keyPc+d)%12,root=36+rootPc;
+  const chord=[root,root+7,root+12,root+19,root+24];
+  const ring=(sec===0||sec===7);
+  /* power-chord strumming; the first chord of a quiet section just rings */
+  const pat=sec===0?[0,6,8,12]:(ring?[0]:((sec===3||sec===4)?SH_STRUM[T.strumB]:(sec===6?SH_STRUM[3]:SH_STRUM[T.strumA])));
+  pat.forEach(s=>{
+    const acc=(s===0||s===8)?1:0.62,t=st(s)+hum();
+    const n=S.lite?3:5,dur=(ring&&sec===7)?u*14:(sec===0?u*5:u*1.8);
+    for(let k=0;k<n;k++)voiceSham(t+k*0.011,chord[chord.length-n+k],(0.42*acc*(ring?1.1:1))*(1-k*0.04),dur,false);
+  });
+  /* bass: a held root with an answering note on beat three */
+  if(!ring){
+    voiceBass(st(0),root,u*(bi===3?14:7),0.22);
+    if(bi!==3)voiceBass(st(8),root,u*6,0.15);
+  }
+  /* light drums: a soft thump, rim on the off-beats, a thread of hat */
+  if(!ring&&!ending){
+    kick(st(0),0.18);if(sec===3||sec===4)kick(st(8),0.13);
+    rim(st(4),0.15);rim(st(12),0.15);
+    if(!S.lite)for(let s=0;s<16;s+=2)hat(st(s),0.12);
+    uiQ.push({t:t0,k:'kick'});
+  }
+  /* the shamisen's tune, with a shakuhachi breathing under its long notes */
+  const notes=T.lead[sec][bi]||[];
+  notes.forEach(n=>{
+    const t=st(n.s)+0.006+hum(),dur=Math.min(5,n.d*u*0.97);
+    voiceSham(t,n.m,n.v,dur,true);
+    if(n.d>=8&&(sec===2||sec===4||sec===6)&&!S.lite)playSample('shaku',t+0.03,n.m>=62?n.m-12:n.m,0.4,Math.min(3,n.d*u*0.9),bus);
+    uiQ.push({t:t,k:'note',m:n.m});
+  });
+}
 function drawNoir(dt,time){
   cx.setTransform(dpr,0,0,dpr,0,0);
   const bg=cx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#07101c');bg.addColorStop(0.7,'#12202f');bg.addColorStop(1,'#0a0f18');
@@ -1352,7 +1496,7 @@ function scheduleBar(t0){
   }
 
   if(T.mode==='noir'){scheduleNoirBar(T,t0,bar,sec,bi,e,st,ending);uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
-  if(T.mode==='japan'){scheduleJapanBar(T,t0,bar,sec,bi,e,st,ending);uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
+  if(T.mode==='japan'){(T.style==='sham'?scheduleShamBar:scheduleJapanBar)(T,t0,bar,sec,bi,e,st,ending);uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
   T.comp.forEach((s,i)=>{
     const t=st(s),v=i===0?0.7:0.4;
     const ch=T.chords[bi],cn=(i===0&&!S.lite)?ch.length:3;
@@ -1622,7 +1766,7 @@ function renderTune(T,bar){
     updateMediaSession();
     $('title').textContent=T.name;
     $('codeTxt').textContent=T.code;
-    $('meta').textContent=NOTE[T.keyPc]+' '+(T.mode==='japan'?JNAMES[T.scaleName]+' · '+T.bpm+' BPM · Koto & shakuhachi':T.mode==='noir'?(T.minor?'minor':'major')+' · '+T.bpm+' BPM · Tenor sax & piano':(T.minor?'minor':'major')+' · '+T.bpm+' BPM · '+Math.round(T.swing*100)+'% swing');
+    $('meta').textContent=NOTE[T.keyPc]+' '+(T.mode==='japan'?(T.style==='sham'?'Minor pentatonic · '+T.bpm+' BPM · Shamisen':JNAMES[T.scaleName]+' · '+T.bpm+' BPM · Koto & shakuhachi'):T.mode==='noir'?(T.minor?'minor':'major')+' · '+T.bpm+' BPM · Tenor sax & piano':(T.minor?'minor':'major')+' · '+T.bpm+' BPM · '+Math.round(T.swing*100)+'% swing');
   }
   $('eyebrow').textContent=started?'Now playing':'Up first';
   renderBar(bar);
@@ -1892,7 +2036,7 @@ window.__cozy={smp:()=>smpState,reduction:()=>({comp:comp_&&comp_.reduction,lim:
 })();
 
 /* installable app: the page is fetched fresh whenever you are online and kept for offline use */
-const BUILD='looplight-v16';
+const BUILD='looplight-v18';
 function showUpdateNotice(){
   if(document.getElementById('updNote'))return;
   const d=document.createElement('div');d.id='updNote';d.className='updnote';d.setAttribute('role','status');
