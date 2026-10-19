@@ -126,7 +126,6 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
     <button type="button" class="btn play" id="play"></button>
     <button type="button" class="btn" id="next">Next tune</button>
     <div class="vol"><label for="vol">Volume</label><input type="range" id="vol" min="0" max="100" step="1" value="50"><output id="volOut">50</output></div>
-    <form class="replay" id="replay"><label for="codeIn">Replay a tune</label><input id="codeIn" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="e.g. 1k9x2a-3" maxlength="14"><button type="submit" class="btn">Play code</button></form>
     <div class="toggles">
       <button type="button" class="tog" id="tAuto" aria-pressed="true">Change tunes automatically</button>
       <button type="button" class="tog" id="tSleep" aria-pressed="false">Sleep timer: off</button>
@@ -145,6 +144,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
       <button type="button" class="tog only-japan" id="tShishi" aria-pressed="false">Bamboo fountain</button>
     </div>
     <div class="ambvols" id="ambVols"></div>
+    <form class="replay" id="replay"><label for="codeIn">Replay a tune</label><input id="codeIn" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="e.g. 1k9x2a-3" maxlength="14"><button type="submit" class="btn">Play code</button></form>
   </section>
 
   <p class="hint"><kbd>Space</kbd> play or pause, <kbd>N</kbd> next tune, <kbd>F</kbd> flip the card.</p>
@@ -1075,9 +1075,9 @@ function pause(){
 const toggle=()=>playing?pause():start();
 
 /* lock-screen and notification controls. Android only shows them while the page is playing through a media element, so a silent loop plays alongside the music */
-let keepEl=null;
+let keepEl=null,lastBar=0;
 function silentWavUrl(){
-  const rate=4000,n=rate*10,b=new Uint8Array(44+n),d=new DataView(b.buffer);
+  const rate=4000,n=rate*180,b=new Uint8Array(44+n),d=new DataView(b.buffer);
   const tx=(o,t)=>{for(let i=0;i<t.length;i++)b[o+i]=t.charCodeAt(i);};
   tx(0,'RIFF');d.setUint32(4,36+n,true);tx(8,'WAVE');tx(12,'fmt ');d.setUint32(16,16,true);d.setUint16(20,1,true);d.setUint16(22,1,true);
   d.setUint32(24,rate,true);d.setUint32(28,rate,true);d.setUint16(32,1,true);d.setUint16(34,8,true);tx(36,'data');d.setUint32(40,n,true);
@@ -1095,6 +1095,15 @@ function updateMediaSession(){
     if(!('mediaSession' in navigator))return;
     if(typeof MediaMetadata!=='undefined')navigator.mediaSession.metadata=new MediaMetadata({title:tune.name,artist:'Looplight',album:FLIP_NAME[mode],artwork:[{src:'icons/icon-192.png',sizes:'192x192',type:'image/png'},{src:'icons/icon-512.png',sizes:'512x512',type:'image/png'}]});
     navigator.mediaSession.playbackState=playing?'playing':'paused';
+  }catch(e){}
+  updateMediaPosition(lastBar);
+}
+/* the lock screen shows one whole tune: its real length (32 bars) and where we are in it, not the length of the silent helper loop */
+function updateMediaPosition(bar){
+  try{
+    if(!('mediaSession' in navigator)||!navigator.mediaSession.setPositionState||!shown)return;
+    const barSec=60/shown.bpm*4,dur=32*barSec;
+    navigator.mediaSession.setPositionState({duration:dur,playbackRate:1,position:Math.min(dur,Math.max(0,bar*barSec))});
   }catch(e){}
 }
 function initMediaSession(){
@@ -1235,6 +1244,7 @@ function renderTune(T,bar){
   }
   $('eyebrow').textContent=started?'Now playing':'Up first';
   renderBar(bar);
+  lastBar=bar;updateMediaPosition(bar);
 }
 function renderBar(bar){
   tickEls.forEach((t,i)=>{t.className='tick'+(i<bar?' past':i===bar?' now':'');});
@@ -1496,7 +1506,7 @@ window.__cozy={smp:()=>smpState,reduction:()=>({comp:comp_&&comp_.reduction,lim:
 })();
 
 /* installable app: the page is fetched fresh whenever you are online and kept for offline use */
-const BUILD='looplight-v8';
+const BUILD='looplight-v9';
 function showUpdateNotice(){
   if(document.getElementById('updNote'))return;
   const d=document.createElement('div');d.id='updNote';d.className='updnote';d.setAttribute('role','status');
