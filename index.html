@@ -193,8 +193,8 @@ const MODES={
     plan:['Jo','Ha','Ha 2','Kyu','Kyu 2','Return','Variation','Coda'],
     adj:['Quiet','Autumn','Moonlit','Misty','Silent','Distant','Willow','Winter','Morning','Gentle','Falling','Stone'],
     noun:['Sakura','Temple','Garden','Crane','Lantern','Bamboo','Pond','Mountain','Koto','Teahouse','Moon','River']},
-  noir:{title:'Jazz Noir',tagline:'Tenor sax · piano · a smoky late-night room',flipTo:'Flip to Cozy',bpm:[66,84],swing:[0.30,0.36],minorP:0.7,
-    voices:['sax'],trim:1.1,reverb:0.5,tone:3400,whoosh:false,hatFrom:99,kickFrom:99,hatMul:1,kickV:1,snare:false,ghost:false,bassDur:[2,2],
+  noir:{title:'Jazz Noir',tagline:'Tenor sax · piano · a smoky late-night room',flipTo:'Flip to Cozy',bpm:[50,62],swing:[0.30,0.34],minorP:0.85,
+    voices:['sax'],trim:1.1,reverb:0.65,tone:3000,whoosh:false,hatFrom:99,kickFrom:99,hatMul:1,kickV:1,snare:false,ghost:false,bassDur:[2,2],
     plan:['Intro','Head','Head 2','Bridge','Bridge 2','Return','Solo','Outro'],
     adj:['Smoky','Midnight','Velvet','Blue','Lonely','Last','Rainy','Slow','Amber','Hushed','Neon','Faded'],
     noun:['Lounge','Alley','Corner','Cigar','Window','Boulevard','Platform','Hotel','Streetlight','Stairwell','Taxi','Last Call']}
@@ -411,7 +411,7 @@ const NCELLS={
   solo:[[[0,1],[1,1],[2,1],[3,1],[4,2],[6,2]],[[0,2],[2,1],[3,1],[4,1],[5,1],[6,2]],[[1,1],[2,1],[3,2],[5,1],[6,1],[7,1]],[[0,3],[3,1],[4,1],[5,1],[6,2]],[[2,1],[3,1],[4,1],[5,1],[6,2]]]
 };
 const NPLAN={head:[[0,2,4,7],[1,3,5,6],[-1,1,3,6],[1,6,5,3]],bridge:[[5,0,2],[1,3,4],[0,7,2],[5,3,6]]};
-const NCOMP=[[0,5],[0,4],[2,5],[0,3,6],[0,5],[1,5]];
+const NCOMP=[[0],[0,5],[0],[0,3],[2,5],[0]];
 const NVEL={head:0.62,bridge:0.7,solo:0.66,outro:0.5,hint:0.5};
 
 function noirPool(ch,which,one){
@@ -426,21 +426,55 @@ function noirPickNear(pl,prev){
   const k=R()<0.12?Math.min(c.length-1,3+rnd(2)):rnd(Math.min(3,c.length));
   return c[k].m;
 }
-/* turn four bars of rhythm cells into notes that follow the chords */
-function noirNotes(chords,cells,kind,start){
+/* the melody is built from one short motif (a rhythm plus a shape) that you can hum: stated, answered, carried over the changes, and brought back unchanged */
+function noirMotif(){
+  const ok=NCELLS.head.filter(c=>c.length>=2&&c.length<=3);
+  const rh=[pick(ok),pick(ok)];
+  const con=rh.map(c=>c.map((x,i)=>i===0?0:pick([-2,-1,-1,1,1,2])));
+  return {rh:rh,con:con};
+}
+const NEND=[[[0,4],[4,4]],[[0,3],[3,5]],[[0,2],[2,6]]];
+function noirRealize(chords,mo,kind,start,flip){
   let prev=start;const bars=[],vb=NVEL[kind];
+  const endCell=pick(NEND);
   for(let b=0;b<4;b++){
-    const ch=chords[b],q=NQ[ch.q],pool=noirPool(ch,'sc'),ctp=noirPool(ch,'ct'),cell=cells[b]||[],out=[];
+    const ch=chords[b],q=NQ[ch.q],pool=noirPool(ch,'sc'),ctp=noirPool(ch,'ct'),out=[];
+    const cell=b===3?endCell:mo.rh[b%2];
+    const con=mo.con[b%2];
     cell.forEach((c,i)=>{
-      const lastN=i===cell.length-1,endPh=lastN&&(b===1||b===3),strong=c[0]===0||c[1]>=3||endPh;
+      const last=i===cell.length-1,phraseEnd=last&&(b===1||b===3),strong=i===0||c[1]>=3||phraseEnd;
       let m;
-      if(!strong&&q.bn>=0&&R()<0.22)m=noirNearest(noirPool(ch,null,q.bn),prev);
-      else m=noirPickNear(strong?ctp:pool,prev);
+      if(i===0)m=noirNearest(ctp,prev);
+      else{
+        const idx=pool.indexOf(noirNearest(pool,prev));
+        let d=(con[i]||0)*(flip?-1:1);
+        if(b===1&&last)d=-d;
+        m=pool[clamp(idx+d,0,pool.length-1)];
+      }
+      if(phraseEnd){
+        const home=b===3?[0,q.vox[0]%12]:[q.vox[0]%12,q.vox[1]%12];
+        m=noirNearest(noirPool(ch,null,pick(home)),prev);
+      }else if(!strong&&q.bn>=0&&R()<0.25)m=noirNearest(noirPool(ch,null,q.bn),prev);
       prev=m;
-      const longN=c[1]>=3;
-      out.push({s:c[0],d:c[1],m:m,v:Math.min(0.9,vb+(c[0]===0?0.05:0)+R()*0.08-0.04),
-        sc:(i===0&&longN&&R()<(kind==='solo'?0.3:0.5))?(R()<0.5?1:2):0,
-        fl:endPh&&longN&&R()<0.5,br:i===0&&(b===0||b===2)});
+      out.push({s:c[0],d:c[1],m:m,v:Math.min(0.9,vb+(c[0]===0?0.05:0)+R()*0.06-0.03),
+        sc:(i===0&&c[1]>=3&&R()<0.4)?(R()<0.5?1:2):0,
+        fl:phraseEnd&&c[1]>=3&&R()<0.6,br:i===0&&(b===0||b===2),gr:(strong&&!phraseEnd&&R()<0.3)?1:0});
+    });
+    bars.push(out);
+  }
+  return bars;
+}
+function noirSolo(chords,mo,start){
+  let prev=start;const bars=[];
+  for(let b=0;b<4;b++){
+    const ch=chords[b],q=NQ[ch.q],pool=noirPool(ch,'sc'),ctp=noirPool(ch,'ct'),out=[];
+    const cell=(b===1||b===3)?[]:(R()<0.55?pick(NCELLS.solo):mo.rh[b%2]);
+    cell.forEach((c,i)=>{
+      const strong=i===0||c[1]>=2;
+      let m=strong?noirNearest(ctp,prev):pool[clamp(pool.indexOf(noirNearest(pool,prev))+pick([-2,-1,-1,1,1,2]),0,pool.length-1)];
+      if(!strong&&q.bn>=0&&R()<0.3)m=noirNearest(noirPool(ch,null,q.bn),prev);
+      prev=m;
+      out.push({s:c[0],d:c[1],m:m,v:0.58+R()*0.08,sc:0,fl:i===cell.length-1&&c[1]>=2&&R()<0.5,br:i===0&&b===0,gr:0});
     });
     bars.push(out);
   }
@@ -448,24 +482,12 @@ function noirNotes(chords,cells,kind,start){
 }
 function noirVary(bars,chords){
   const V=bars.map(nb=>nb.map(n=>Object.assign({},n)));
-  [0,1].forEach(b=>{
-    const nb=V[b];
-    if(nb.length>1&&R()<0.85){
-      const n=nb[rnd(nb.length-1)],pl=noirPool(chords[b],'sc');
-      let idx=pl.indexOf(noirNearest(pl,n.m));idx=clamp(idx+pick([-1,1]),0,pl.length-1);n.m=pl[idx];
-    }
-  });
-  return V;
-}
-function noirSecCells(kind){
-  if(kind==='outro')return [[[0,6]],[],[[0,8]],[]];
-  if(kind==='hint')return [[],[],[[0,5]],[[2,4]]];
-  if(kind==='solo'){
-    const c=[0,1,2,3].map(()=>pick(NCELLS.solo));
-    if(R()<0.8)c[rnd(2)?1:3]=[];
-    return c;
+  const nb=V[2];
+  if(nb.length>1&&R()<0.85){
+    const n=nb[nb.length-1],pl=noirPool(chords[2],'sc');
+    let idx=pl.indexOf(noirNearest(pl,n.m));idx=clamp(idx+pick([-1,1]),0,pl.length-1);n.m=pl[idx];
   }
-  return NPLAN[kind].map(l=>{const i=pick(l);return i<0?[]:NCELLS.head[i];});
+  return V;
 }
 /* piano voicing: each chord tone moves to the nearest note to where it was, so the hand barely moves */
 function noirVoicing(ch,prev){
@@ -509,7 +531,7 @@ function composeNoir(prevPc,fixed,seed){
   for(let bar=0;bar<32;bar++){const v=noirVoicing(chordAt(bar),pv);pv=v.roles;T.vox.push(v.sorted);}
   for(let bar=0;bar<32;bar++){
     const sec=bar>>2,bi=bar&3;
-    const walk=sec===3||sec===4||sec===6||((sec===1||sec===2||sec===5)&&bi===3);
+    const walk=sec===3||sec===4||sec===6;
     T.bass.push(noirBass(chordAt(bar),chordAt((bar+1)%32),walk));
   }
   for(let bar=0;bar<32;bar++){
@@ -517,16 +539,18 @@ function composeNoir(prevPc,fixed,seed){
     if(sec===0||sec===7)T.comp.push(bar===0||bar%2===0?[0]:[]);
     else T.comp.push(bar%4===0||R()>0.12?pick(sec===6?[[0,5],[2,6],[0,4]]:NCOMP):[]);
   }
-  /* melody: hint in the intro, the head and its answer, a contrasting bridge, the head again, a quiet solo, a sparse outro */
-  const start=pick([62,64,65,67]);
-  const hint=noirNotes(cA,noirSecCells('hint'),'hint',start);
-  const headA=noirNotes(cA,noirSecCells('head'),'head',start);
+  /* melody: a hint in the intro, the head and a varied answer, a bridge that turns the motif upside down, the head again unchanged, a quiet solo, a sparse outro */
+  const start=pick([60,62,64,65]),mo=noirMotif();
+  const headA=noirRealize(cA,mo,'head',start,false);
+  const hintFull=noirRealize(cA,mo,'hint',start,false);
+  const hint=[[],[],hintFull[0],[]];
   const headA2=noirVary(headA,cA);
-  const bridge=noirNotes(cB,noirSecCells('bridge'),'bridge',start+2);
+  const bridge=noirRealize(cB,mo,'bridge',start+2,true);
   const bridge2=noirVary(bridge,cB);
-  const ret=noirVary(headA,cA);
-  const solo=noirNotes(cA2,noirSecCells('solo'),'solo',start+1);
-  const outro=noirNotes(cA,noirSecCells('outro'),'outro',start);
+  const ret=headA.map(nb=>nb.map(n=>Object.assign({},n)));
+  const solo=noirSolo(cA2,mo,start+1);
+  const rootNote=noirNearest(noirPool(cA[0],null,0),start);
+  const outro=[headA[0].map(n=>Object.assign({},n,{v:0.5})),[],[{s:0,d:8,m:rootNote,v:0.46,sc:0,fl:false,br:false,gr:0}],[]];
   T.mel=[hint,headA,headA2,bridge,bridge2,ret,solo,outro];
   return T;
 }
@@ -1230,7 +1254,7 @@ function scheduleNoirBar(T,t0,bar,sec,bi,e,st,ending){
   const drums=!(intro&&bar<2)&&!ending;
   if(drums){
     const dv=outro?0.7:1;
-    [0,2,3,4,6,7].forEach(s=>{if(S.lite&&(s===3||s===7))return;brushSwish(st(s),s===3||s===7?0.09:0.2,(s===0||s===4?1:0.75)*dv);});
+    [0,2,3,4,6,7].forEach(s=>{if((s===3||s===7)&&(S.lite||(bar+s)%2))return;brushSwish(st(s),s===3||s===7?0.09:0.24,(s===0||s===4?0.85:0.6)*dv);});
     brushSweep(st(2),dv);brushSweep(st(6),dv);
     if(!S.lite&&sec>=1&&sec<=6)brushFoot(st(2),0.8*dv);
     if(S.bass&&sec>=1&&sec<=6)[0,4].forEach(s=>brushKick(st(s),0.7));
@@ -1242,7 +1266,8 @@ function scheduleNoirBar(T,t0,bar,sec,bi,e,st,ending){
     mel[bi].forEach(n=>{
       const t=st(n.s)+0.012+hum();
       if(n.br&&!S.lite)voiceBreath(Math.max(t0-0.05,t-0.24),n.v);
-      voiceSax(t,mtof(n.m),n.d*e*0.9,n.v,{scoop:n.sc,fall:n.fl});
+      if(n.gr&&!S.lite)voiceSax(t-0.11,mtof(n.m-1),0.12,n.v*0.7,{});
+      voiceSax(t,mtof(n.m),Math.min(3.4,n.d*e*0.9),n.v,{scoop:n.sc,fall:n.fl});
       uiQ.push({t:t,k:'note',m:n.m});
     });
   }
@@ -1888,7 +1913,7 @@ window.__cozy={smp:()=>smpState,reduction:()=>({comp:comp_&&comp_.reduction,lim:
 })();
 
 /* installable app: the page is fetched fresh whenever you are online and kept for offline use */
-const BUILD='looplight-v11';
+const BUILD='looplight-v12';
 function showUpdateNotice(){
   if(document.getElementById('updNote'))return;
   const d=document.createElement('div');d.id='updNote';d.className='updnote';d.setAttribute('role','status');
