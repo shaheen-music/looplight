@@ -61,6 +61,7 @@ h2{margin:0;font:400 clamp(1.7rem,1.2rem + 2.4vw,2.6rem)/1.08 var(--f-display);t
 .codebtn{background:none;border:0;padding:0;font:inherit;color:var(--lamp);cursor:pointer;text-decoration:underline dotted}
 .replay{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:.75rem 0}
 .replay label{font:500 .85rem var(--f-sans);color:var(--muted)}
+.replay .btn{min-height:34px;padding:.35rem .9rem;border-radius:999px;font-size:.78rem}
 .replay input{flex:1 1 9rem;min-width:0;background:var(--surface);color:inherit;border:1px solid #ffffff22;border-radius:.6rem;padding:.55rem .7rem;font:400 .9rem var(--f-mono)}
 .meta{margin:0;font:400 .85rem/1.4 var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
 .upnext{margin:0;font-size:.85rem;color:var(--muted)}
@@ -1222,7 +1223,7 @@ const playBtn=$('play');
 const ICON_PLAY='<svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1l9 5-9 5z" fill="currentColor"/></svg>';
 const ICON_PAUSE='<svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="3" height="9" rx="1" fill="currentColor"/><rect x="7" y="1.5" width="3" height="9" rx="1" fill="currentColor"/></svg>';
 function renderPlayBtn(){playBtn.innerHTML=playing?ICON_PAUSE+'<span>Pause</span>':ICON_PLAY+'<span>'+(started?'Resume':'Play')+'</span>';updateMediaSession();}
-function renderStatus(){$('status').innerHTML=loadingBand?'<b>Tuning the koto…</b>':playing?'<b>Playing</b>':started?'Paused':'Ready';}
+function renderStatus(){$('status').innerHTML=loadingBand?'<b>Tuning the koto…</b>':playing?'<b>Playing</b>':started?'Paused':'';}
 let shown=null;
 function renderTune(T,bar){
   if(shown!==T){
@@ -1495,7 +1496,7 @@ window.__cozy={smp:()=>smpState,reduction:()=>({comp:comp_&&comp_.reduction,lim:
 })();
 
 /* installable app: the page is fetched fresh whenever you are online and kept for offline use */
-const BUILD='looplight-v6';
+const BUILD='looplight-v7';
 function showUpdateNotice(){
   if(document.getElementById('updNote'))return;
   const d=document.createElement('div');d.id='updNote';d.className='updnote';d.setAttribute('role','status');
