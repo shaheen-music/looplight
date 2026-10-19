@@ -193,8 +193,8 @@ const MODES={
     plan:['Jo','Ha','Ha 2','Kyu','Kyu 2','Return','Variation','Coda'],
     adj:['Quiet','Autumn','Moonlit','Misty','Silent','Distant','Willow','Winter','Morning','Gentle','Falling','Stone'],
     noun:['Sakura','Temple','Garden','Crane','Lantern','Bamboo','Pond','Mountain','Koto','Teahouse','Moon','River']},
-  noir:{title:'Jazz Noir',tagline:'Tenor sax · piano · a smoky late-night room',flipTo:'Flip to Cozy',bpm:[50,62],swing:[0.30,0.34],minorP:0.85,
-    voices:['sax'],trim:1.1,reverb:0.65,tone:3000,whoosh:false,hatFrom:99,kickFrom:99,hatMul:1,kickV:1,snare:false,ghost:false,bassDur:[2,2],
+  noir:{title:'Jazz Noir',tagline:'Tenor sax · piano · a smoky late-night room',flipTo:'Flip to Cozy',bpm:[66,80],swing:[0.30,0.34],minorP:0.3,
+    voices:['sax'],trim:1.1,reverb:0.5,tone:3600,whoosh:false,hatFrom:99,kickFrom:99,hatMul:1,kickV:1,snare:false,ghost:false,bassDur:[2,2],
     plan:['Intro','Head','Head 2','Bridge','Bridge 2','Return','Solo','Outro'],
     adj:['Smoky','Midnight','Velvet','Blue','Lonely','Last','Rainy','Slow','Amber','Hushed','Neon','Faded'],
     noun:['Lounge','Alley','Corner','Cigar','Window','Boulevard','Platform','Hotel','Streetlight','Stairwell','Taxi','Last Call']}
@@ -372,37 +372,30 @@ function composeJapan(prevPc,fixed,seed){
 /* qualities: vox = rootless piano voicing (3rd, 5th or 6th, 7th, 9th or 13th) in semitones above the root; sc = notes the sax may pass through; ct = chord tones for strong beats; bn = a blue note to lean on; fifth = the bass's fifth */
 const NQ={
   maj7:{vox:[4,7,11,14],sc:[0,2,4,7,9,11],ct:[4,7,11,2],bn:-1,fifth:7},
-  m7:{vox:[3,7,10,14],sc:[0,2,3,5,7,9,10],ct:[3,7,10,2],bn:6,fifth:7},
-  dom7:{vox:[4,10,14,21],sc:[0,2,4,5,7,9,10],ct:[4,10,7,2],bn:3,fifth:7},
-  alt:{vox:[4,10,15,20],sc:[0,1,3,4,6,8,10],ct:[4,10,8,3],bn:-1,fifth:6},
-  m7b5:{vox:[3,6,10,14],sc:[0,2,3,5,6,8,10],ct:[3,6,10,0],bn:-1,fifth:6},
-  mMaj7:{vox:[3,7,11,14],sc:[0,2,3,5,7,9,11],ct:[3,7,11,2],bn:-1,fifth:7},
-  m6:{vox:[3,7,9,14],sc:[0,2,3,5,7,9,10],ct:[3,7,9,2],bn:6,fifth:7}
+  m7:{vox:[3,7,10,14],sc:[0,2,3,5,7,10],ct:[3,7,10,2],bn:-1,fifth:7},
+  dom7:{vox:[4,10,14,21],sc:[0,2,4,7,9,10],ct:[4,10,7,2],bn:3,fifth:7}
 };
 /* four bars, one chord a bar: [semitones above the key, quality] */
 const NP_MIN_A=[
-  [[0,'m7'],[5,'m7'],[2,'m7b5'],[7,'alt']],
-  [[0,'m7'],[8,'maj7'],[2,'m7b5'],[7,'alt']],
-  [[0,'m7'],[0,'mMaj7'],[0,'m7'],[0,'m6']],
-  [[0,'m7'],[10,'dom7'],[3,'maj7'],[7,'alt']],
-  [[0,'m7'],[5,'m7'],[0,'m7'],[7,'dom7']]
+  [[0,'m7'],[5,'m7'],[10,'dom7'],[3,'maj7']],
+  [[0,'m7'],[3,'maj7'],[8,'maj7'],[10,'dom7']],
+  [[0,'m7'],[5,'m7'],[0,'m7'],[10,'dom7']]
 ];
 const NP_MIN_B=[
   [[5,'m7'],[10,'dom7'],[3,'maj7'],[8,'maj7']],
-  [[8,'maj7'],[2,'m7b5'],[7,'alt'],[0,'m7']],
-  [[3,'maj7'],[8,'maj7'],[2,'m7b5'],[7,'alt']],
-  [[5,'m7'],[5,'m7'],[2,'m7b5'],[7,'alt']]
+  [[8,'maj7'],[10,'dom7'],[3,'maj7'],[0,'m7']],
+  [[3,'maj7'],[8,'maj7'],[10,'dom7'],[0,'m7']]
 ];
 const NP_MAJ_A=[
   [[0,'maj7'],[9,'m7'],[2,'m7'],[7,'dom7']],
-  [[0,'maj7'],[4,'m7'],[9,'dom7'],[2,'m7']],
-  [[0,'maj7'],[5,'dom7'],[0,'maj7'],[7,'dom7']],
-  [[2,'m7'],[7,'dom7'],[0,'maj7'],[9,'dom7']]
+  [[0,'maj7'],[4,'m7'],[9,'m7'],[2,'m7']],
+  [[0,'maj7'],[9,'m7'],[5,'maj7'],[7,'dom7']],
+  [[4,'m7'],[9,'m7'],[2,'m7'],[7,'dom7']]
 ];
 const NP_MAJ_B=[
-  [[5,'maj7'],[4,'m7'],[9,'dom7'],[2,'m7']],
-  [[2,'m7'],[7,'dom7'],[4,'m7'],[9,'dom7']],
-  [[4,'m7'],[9,'dom7'],[2,'m7'],[7,'dom7']],
+  [[5,'maj7'],[4,'m7'],[9,'m7'],[2,'m7']],
+  [[2,'m7'],[7,'dom7'],[4,'m7'],[9,'m7']],
+  [[5,'maj7'],[7,'dom7'],[4,'m7'],[9,'m7']],
   [[9,'m7'],[2,'m7'],[7,'dom7'],[0,'maj7']]
 ];
 /* sax rhythms on the eight-step bar, [start step, length in steps]; plenty of air */
@@ -443,11 +436,11 @@ function noirFlow(ch,cell,prev,st){
     let m;
     if(strong&&i===0)m=noirNearest(ctp,prev);
     else{
-      if(prev>69)st.dir=-1;else if(prev<58)st.dir=1;else if(R()<0.22)st.dir=-st.dir;
+      if(prev>69)st.dir=-1;else if(prev<58)st.dir=1;else if(R()<0.3)st.dir=-st.dir;
       const idx=pool.indexOf(noirNearest(pool,prev));
       m=pool[clamp(idx+st.dir*pick([1,1,1,2]),0,pool.length-1)];
       if(c[1]>=3)m=noirNearest(ctp,m);
-      if(!strong&&q.bn>=0&&R()<0.22)m=noirNearest(noirPool(ch,null,q.bn),prev);
+      if(!strong&&q.bn>=0&&R()<0.08)m=noirNearest(noirPool(ch,null,q.bn),prev);
     }
     prev=m;out.push({m:m,c:c});
   });
@@ -550,14 +543,15 @@ function composeNoir(prevPc,fixed,seed){
   }
   for(let bar=0;bar<32;bar++){
     const sec=bar>>2;
-    if(sec===0||sec===7)T.comp.push(bar===0||bar%2===0?[0]:[]);
+    if(sec===0)T.comp.push([0,5]);
+    else if(sec===7)T.comp.push(bar%2===0?[0]:[]);
     else T.comp.push(bar%4===0||R()>0.12?pick(sec===6?[[0,5],[2,6],[0,4]]:NCOMP):[]);
   }
   /* melody: a hint in the intro, the head and a varied answer, a bridge that turns the motif upside down, the head again unchanged, a quiet solo, a sparse outro */
   const start=pick([60,62,64,65]),mo=noirMotif();
   const headA=noirRealize(cA,mo,'head',start,false);
   const hintFull=noirRealize(cA,mo,'hint',start,false);
-  const hint=[[],[],hintFull[0],hintFull[1]];
+  const hint=[hintFull[0],hintFull[1],hintFull[2],hintFull[3]];
   const headA2=noirVary(headA,cA);
   const mo2=Object.assign({},mo,{fill:[pick(NLYR),pick(NLYR)],end:pick(NEND)});
   const bridge=noirRealize(cB,mo2,'bridge',start+2,true);
@@ -1162,15 +1156,15 @@ function voiceSax(t,f,dur,v,o){
   o=o||{};
   dur=Math.max(0.22,dur);
   const rel=Math.min(0.35,dur*0.35),end=t+dur+rel;
-  const sc=o.scoop?(o.scoop===1?-1.2:-2.2):0;
+  const sc=o.scoop?(o.scoop===1?-0.6:-1):0;
   const src=ac.createOscillator();src.type='sawtooth';
-  const src2=ac.createOscillator();src2.type='square';src2.detune.value=4;
+  const src2=ac.createOscillator();src2.type='square';src2.detune.value=0;
   if(sc){src.frequency.setValueAtTime(f*Math.pow(2,sc/12),t);src.frequency.exponentialRampToValueAtTime(f,t+0.09);src2.frequency.setValueAtTime(f*Math.pow(2,sc/12),t);src2.frequency.exponentialRampToValueAtTime(f,t+0.09);}
   else{src.frequency.setValueAtTime(f,t);src2.frequency.setValueAtTime(f,t);}
-  if(o.fall){const a=t+dur-0.02;[src,src2].forEach(s=>{s.frequency.setValueAtTime(f,a);s.frequency.exponentialRampToValueAtTime(f*Math.pow(2,-2.5/12),a+rel+0.05);});}
+  if(o.fall){const a=t+dur-0.02;[src,src2].forEach(s=>{s.frequency.setValueAtTime(f,a);s.frequency.exponentialRampToValueAtTime(f*Math.pow(2,-1.5/12),a+rel+0.05);});}
   /* vibrato that starts after the note has settled */
   const vib=ac.createOscillator();vib.frequency.value=4.6+Math.random()*0.8;
-  const vg=ac.createGain();vg.gain.setValueAtTime(0,t);vg.gain.setValueAtTime(0,t+Math.min(0.45,dur*0.5));vg.gain.linearRampToValueAtTime(f*0.006,t+Math.min(0.9,dur*0.9)+0.1);
+  const vg=ac.createGain();vg.gain.setValueAtTime(0,t);vg.gain.setValueAtTime(0,t+Math.min(0.45,dur*0.5));vg.gain.linearRampToValueAtTime(f*0.0035,t+Math.min(0.9,dur*0.9)+0.1);
   vib.connect(vg);vg.connect(src.frequency);vg.connect(src2.frequency);
   const mix=ac.createGain();mix.gain.value=1;
   const g2=ac.createGain();g2.gain.value=0.22;
@@ -1262,13 +1256,13 @@ function scheduleNoirBar(T,t0,bar,sec,bi,e,st,ending){
     for(let k=0;k<n;k++)voicePianoNoir(t+k*0.017,mtof(vox[vox.length-n+k]),Math.max(0.2,v-k*0.03));
   });
   /* upright bass: two-feel in the quiet parts, walking where the tune opens up */
-  if(!(intro&&bar<2)){
+  {
     T.bass[bar].forEach(n=>{voiceUpright(st(n.b*2)+hum()*0.5,mtof(n.m),n.d*2*e*0.95,(n.b===0?0.75:0.6)*(outro?0.8:1));});
   }
   /* brushes */
-  const drums=!(intro&&bar<2)&&!ending;
+  const drums=!ending;
   if(drums){
-    const dv=outro?0.7:1;
+    const dv=(outro||intro)?0.7:1;
     [0,2,3,4,6,7].forEach(s=>{if((s===3||s===7)&&(S.lite||(bar+s)%2))return;brushSwish(st(s),s===3||s===7?0.09:0.24,(s===0||s===4?0.7:0.5)*dv);});
     brushSweep(st(2),dv*0.8);brushSweep(st(6),dv*0.8);
     if(!S.lite&&sec>=1&&sec<=6)brushFoot(st(2),0.8*dv);
@@ -1928,7 +1922,7 @@ window.__cozy={smp:()=>smpState,reduction:()=>({comp:comp_&&comp_.reduction,lim:
 })();
 
 /* installable app: the page is fetched fresh whenever you are online and kept for offline use */
-const BUILD='looplight-v13';
+const BUILD='looplight-v14';
 function showUpdateNotice(){
   if(document.getElementById('updNote'))return;
   const d=document.createElement('div');d.id='updNote';d.className='updnote';d.setAttribute('role','status');
