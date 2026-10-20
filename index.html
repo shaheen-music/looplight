@@ -191,13 +191,13 @@ const MODES={
     plan:['Intro','Morning','Morning 2','Break','Break 2','Return','Variation','Outro'],
     adj:['Sunny','Bright','Breezy','Honey','Easy','Golden','Lemon','Cheerful','Light','Fresh','Little','Merry'],
     noun:['Porch','Cafe','Garden','Bakery','Balcony','Picnic','Meadow','Walk','Windowsill','Breakfast','Orchard','Afternoon']},
-  japan:{title:'Japanese Classical',tagline:'Koto · shakuhachi · a quiet garden',flipTo:'Flip to Cozy',bpm:[58,76],swing:[0,0],minorP:0,
-    voices:['koto'],trim:3.2,reverb:0.7,tone:3600,whoosh:false,hatFrom:99,kickFrom:99,hatMul:1,kickV:1,snare:false,ghost:false,bassDur:[2,2],
+  japan:{title:'Japanese Classical',tagline:'Koto · shakuhachi · a quiet garden',flipTo:'Flip to Cozy',bpm:[46,58],swing:[0,0],minorP:0,
+    voices:['koto'],trim:3.6,reverb:0.8,tone:3000,whoosh:false,hatFrom:99,kickFrom:99,hatMul:1,kickV:1,snare:false,ghost:false,bassDur:[2,2],
     plan:['Jo','Ha','Ha 2','Kyu','Kyu 2','Return','Variation','Coda'],
     adj:['Quiet','Autumn','Moonlit','Misty','Silent','Distant','Willow','Winter','Morning','Gentle','Falling','Stone'],
     noun:['Sakura','Temple','Garden','Crane','Lantern','Bamboo','Pond','Mountain','Koto','Teahouse','Moon','River']},
-  china:{title:'Silk & Bamboo',tagline:'Guzheng · bamboo flute · erhu · a misty pavilion',flipTo:'Flip to Cozy',bpm:[66,80],swing:[0,0],minorP:0,
-    voices:['koto'],trim:1.8,reverb:0.72,tone:3600,whoosh:false,hatFrom:99,kickFrom:99,hatMul:1,kickV:1,snare:false,ghost:false,bassDur:[2,2],
+  china:{title:'Silk & Bamboo',tagline:'Guzheng · bamboo flute · erhu · a misty pavilion',flipTo:'Flip to Cozy',bpm:[84,102],swing:[0,0],minorP:0,
+    voices:['koto'],trim:1.5,reverb:0.6,tone:4800,whoosh:false,hatFrom:99,kickFrom:99,hatMul:1,kickV:1,snare:false,ghost:false,bassDur:[2,2],
     plan:['Prelude','Theme','Theme 2','Bridge','Bridge 2','Return','Variation','Coda'],
     adj:['Misty','Jade','Spring','Lotus','Distant','Silken','Morning','Quiet','Golden','Orchid','Winding','Moonlit'],
     noun:['Pavilion','River','Lotus Pond','Bamboo Grove','West Lake','Mountain Path','Lantern','Teahouse','Willow','Stone Bridge','Plum Blossom','Dawn']},
@@ -314,7 +314,7 @@ function composeInner(prevPc,fixed,seed,m){
 }
 
 /* ---- Japanese Classical side: koto patterns on a five-note scale, a shakuhachi melody that breathes, and the odd soft taiko ---- */
-const JSCALES={yo:[0,2,5,7,9],ryo:[0,2,4,7,9],hirajoshi:[0,2,3,7,8]};
+const JSCALES={yo:[0,2,5,7,9],ryo:[0,2,4,7,9],hirajoshi:[0,2,3,7,8],in:[0,1,5,7,8],iwato:[0,1,5,6,10]};
 const JNAMES={yo:'Yo',ryo:'Ryo',hirajoshi:'Hirajoshi'};
 const JPROG=[[0,3,2,0],[0,2,4,0],[0,4,3,0],[0,3,4,2],[0,1,3,0],[0,2,1,0]];
 const KP_SOFT=[[[0,0],[1,2],[2,4],[4,2],[5,4],[6,5]],[[0,0],[2,2],[3,4],[4,2],[6,4],[7,2]],[[0,4],[1,2],[2,0],[4,2],[5,4],[6,2]],[[0,0],[1,2],[2,3],[4,4],[5,3],[6,2]]];
@@ -357,11 +357,11 @@ function jPhrase(pool,keyPc,busy,home,motif){
 function composeJapan(prevPc,fixed,seed){
   const style=fixed?(fixed.style||'koto'):(window.__JSTYLE||(Math.random()<0.75?'sham':'koto'));
   const cfg=MODES.japan;
-  const scaleName=pick(['yo','ryo','ryo','yo','hirajoshi']),sc=JSCALES[scaleName];
+  const scaleName=pick(['in','in','hirajoshi','hirajoshi','iwato','yo']),sc=JSCALES[scaleName];
   let ki=rnd(7);
   if(fixed)ki=fixed.ki;else if(KEYS[ki]===prevPc)ki=(ki+1)%7;
   const keyPc=KEYS[ki];
-  const kpool=jPool(keyPc,sc,38,84),mpool=jPool(keyPc,sc,60,77);
+  const kpool=jPool(keyPc,sc,38,84),mpool=jPool(keyPc,sc,56,72);
   let idx0=0;for(let i=0;i<kpool.length;i++){if(kpool[i]>=48&&((kpool[i]-keyPc)%12+12)%12===0){idx0=i;break;}}
   const ia=rnd(JPROG.length);let ib=rnd(JPROG.length-1);if(ib>=ia)ib++;
   const T={
@@ -387,11 +387,11 @@ const CZ_FLOW=[[0,2,4,2,5,4,2,4],[0,4,2,4,5,4,2,1],[0,2,4,5,4,2,4,2],[0,2,1,2,4,
 const CZ_BUSY=[[0,2,4,2,5,4,5,4],[0,4,2,4,5,4,2,4],[0,2,4,5,4,5,4,2],[0,1,2,4,2,4,5,4]].map(czMk);
 function composeChina(prevPc,fixed,seed){
   const cfg=MODES.china;
-  const scaleName=pick(['gong','gong','gong','yu','yu','zhi','shang','jue']),sc=CSCALES[scaleName];
+  const scaleName=pick(['gong','gong','gong','gong','zhi','zhi','yu','shang']),sc=CSCALES[scaleName];
   let ki=rnd(7);
   if(fixed)ki=fixed.ki;else if(KEYS[ki]===prevPc)ki=(ki+1)%7;
   const keyPc=KEYS[ki];
-  const kpool=jPool(keyPc,sc,38,84),mpool=jPool(keyPc,sc,62,79);
+  const kpool=jPool(keyPc,sc,38,84),mpool=jPool(keyPc,sc,65,81);
   let idx0=0;for(let i=0;i<kpool.length;i++){if(kpool[i]>=48&&((kpool[i]-keyPc)%12+12)%12===0){idx0=i;break;}}
   const ia=rnd(CPROG.length);let ib=rnd(CPROG.length-1);if(ib>=ia)ib++;
   const leadA=pick(['flute','flute','erhu']);
@@ -426,6 +426,8 @@ function scheduleChinaBar(T,t0,bar,sec,bi,e,st,ending){
     const down=sec!==0;
     for(let k=0;k<8;k++)playSample('dtr',st(6)+k*0.07,kn(T.idx0+(down?8-k:k+1)),0.26+(down?(7-k):k)*0.03,1.2,bus);
   }
+  /* a rippling run up the strings at the start of alternate bars: the flowing, water-like guzheng sound */
+  if(!S.lite&&sec>=1&&sec<=6&&bi%2===0)for(let k=0;k<6;k++)playSample('dtr',t0+k*0.06,kn(T.idx0+d+k),0.2+k*0.03,1.0,bus);
   uiQ.push({t:t0,k:'kick'});
   const pk=PLAN[sec].ph;
   if(pk&&T[pk]){
@@ -436,7 +438,7 @@ function scheduleChinaBar(T,t0,bar,sec,bi,e,st,ending){
         playSample('flute',t,n.midi,n.step===0?0.95:0.82,nd,bus);
         /* a quick grace note above, the way a dizi ornaments */
         if(!S.lite&&!long&&Math.random()<0.25){const gm=T.kpool[clamp(T.kpool.indexOf(n.midi)+1,0,T.kpool.length-1)];if(gm!==n.midi&&gm<=82)playSample('flute',t-0.07,gm,0.4,0.07,bus);}
-      }else playSample('erhu',t,n.midi,n.step===0?0.95:0.82,nd,bus,{scoop:long?1:0});
+      }else playSample('erhu',t,n.midi,n.step===0?0.95:0.82,nd,bus,{scoop:(long||Math.random()<0.55)?1:0});
       /* the guzheng picks out the strong beats of the tune */
       if(n.step===0||n.step===4)playSample('dtr',t,n.midi,0.5,1.4,bus);
       /* the second instrument joins softly in the later halves, an octave lower when it is the flute's turn to be below */
@@ -1402,8 +1404,10 @@ function scheduleJapanBar(T,t0,bar,sec,bi,e,st,ending){
   /* koto accompaniment: a rolling arpeggio, gentle in the Jo, flowing in the Ha, fuller in the Kyu */
   const pat=sec===0?T.kintro:(busy?T.kbusy:(sec===1||sec===5||sec===7?T.kpat:T.kbusy));
   const kv=sec===0?0.42:(busy?0.5:0.4);
+  /* the Japanese side breathes: a sparse koto, silent in the last bar of each phrase (ma, the space between notes) */
   pat.forEach((q,i)=>{
     if(S.lite&&i%2)return;
+    if(!busy&&(i%2===1||bi===3))return;
     playSample('koto',st(q[0])+hum(),kn(c+q[1]),q[0]===0?kv+0.1:kv,1.6,bus);
   });
   if(bi%2===0)playSample('koto',t0+hum(),kn(T.idx0-5+(d>2?2:0)),0.55,1.8,bus);
@@ -1426,8 +1430,8 @@ function scheduleJapanBar(T,t0,bar,sec,bi,e,st,ending){
         if(!S.lite&&n.dur<4&&Math.random()<0.25){const gm=T.kpool[clamp(T.kpool.indexOf(n.midi)-1,0,T.kpool.length-1)];if(gm!==n.midi)voiceSham(t-0.07,gm,0.5,0.06,true,0.22,false);}
         /* long notes shiver with quick re-plucks (tremolo) */
         if(!S.lite&&n.dur>=4&&Math.random()<0.5)for(let k=1;k<=4;k++)voiceSham(t+0.14*k,n.midi,0.5-k*0.07,0.1,true,0.22,false);
-      }else playSample('koto',t,n.midi,n.step===0?0.95:0.8,1.6,bus,{gain:1.15});
-      if((sec===2||sec===4||sec===6||sec===7)&&!S.lite&&(T.style!=='sham'||n.dur>=3))playSample('shaku',t+0.03,n.midi-12>=56?n.midi-12:n.midi,0.55,Math.min(3,n.dur*e*0.95),bus);
+      }else playSample('koto',t,n.midi,n.step===0?0.95:0.8,1.6,bus,{gain:1.15,scoop:Math.random()<0.3?1:0});
+      if((sec===2||sec===4||sec===6||sec===7||(n.dur>=3&&Math.random()<0.5))&&!S.lite&&(T.style!=='sham'||n.dur>=3))playSample('shaku',t+0.03,n.midi-12>=56?n.midi-12:n.midi,0.55,Math.min(3,n.dur*e*0.95),bus);
       uiQ.push({t:t,k:'note',m:n.midi});
     });
   }
@@ -2328,7 +2332,7 @@ window.__cozy={ps:(...a)=>playSample(...a),getBus:()=>mainBus,init:()=>{initAudi
 })();
 
 /* installable app: the page is fetched fresh whenever you are online and kept for offline use */
-const BUILD='looplight-v34';
+const BUILD='looplight-v35';
 function showUpdateNotice(){
   if(document.getElementById('updNote'))return;
   const d=document.createElement('div');d.id='updNote';d.className='updnote';d.setAttribute('role','status');
