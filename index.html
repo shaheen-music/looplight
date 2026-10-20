@@ -170,7 +170,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v49';
+const BUILD='looplight-v51';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -201,7 +201,7 @@ const MODES={
     plan:['Jo','Ha','Ha 2','Kyu','Kyu 2','Return','Variation','Coda'],
     adj:['Quiet','Autumn','Moonlit','Misty','Silent','Distant','Willow','Winter','Morning','Gentle','Falling','Stone'],
     noun:['Sakura','Temple','Garden','Crane','Lantern','Bamboo','Pond','Mountain','Koto','Teahouse','Moon','River']},
-  china:{title:'Silk & Bamboo',tagline:'Guzheng · bamboo flute · erhu · a misty pavilion',flipTo:'Flip to Cozy',bpm:[84,102],swing:[0,0],minorP:0,
+  china:{title:'Silk & Bamboo',tagline:'Guzheng · bamboo flute · erhu · a misty pavilion',flipTo:'Flip to Cozy',bpm:[70,80],swing:[0,0],minorP:0,
     voices:['koto'],trim:1.5,reverb:0.6,tone:4800,whoosh:false,hatFrom:99,kickFrom:99,hatMul:1,kickV:1,snare:false,ghost:false,bassDur:[2,2],
     plan:['Prelude','Theme','Theme 2','Bridge','Bridge 2','Return','Variation','Coda'],
     adj:['Misty','Jade','Spring','Lotus','Distant','Silken','Morning','Quiet','Golden','Orchid','Winding','Moonlit'],
@@ -437,9 +437,11 @@ const CSCALES={gong:[0,2,4,7,9],shang:[0,2,5,7,10],jue:[0,3,5,8,10],zhi:[0,2,5,7
 const CNAMES={gong:'Gong',shang:'Shang',jue:'Jue',zhi:'Zhi',yu:'Yu'};
 const CPROG=[[0,2,1,0],[0,3,2,0],[0,1,3,0],[0,2,3,1],[0,4,2,0],[0,3,1,0]];
 const czMk=a=>a.map((o,i)=>[i,o]);
-const CZ_INTRO=[[[0,0],[2,2],[4,4],[6,2]],[[0,0],[2,4],[4,2],[6,4]],[[0,2],[2,0],[4,2],[6,4]]];
-const CZ_FLOW=[[0,2,4,2,5,4,2,4],[0,4,2,4,5,4,2,1],[0,2,4,5,4,2,4,2],[0,2,1,2,4,2,5,4]].map(czMk);
-const CZ_BUSY=[[0,2,4,2,5,4,5,4],[0,4,2,4,5,4,2,4],[0,2,4,5,4,5,4,2],[0,1,2,4,2,4,5,4]].map(czMk);
+/* guzheng left hand, in scale steps from the bar's chord (-5 is the low root): the bar opens quietly, a held note, then a rising broken chord (root, fifth, octave, ninth) through the second half */
+const CZ_LH1=[[2,0],[4,-5],[5,-2],[6,0],[7,1]];
+const CZ_LH2=[[0,-5],[2,-2],[4,-5],[5,-2],[6,0],[7,-2]];
+const CZ_LH3=[[1,-2],[2,0],[3,-2],[4,-5],[5,-2],[6,0],[7,1]];
+const CZ_LH4=[[4,-5],[6,0]];
 function composeChina(prevPc,fixed,seed){
   const cfg=MODES.china;
   const scaleName=pick(['gong','gong','gong','gong','zhi','zhi','yu','shang']),sc=CSCALES[scaleName];
@@ -453,7 +455,7 @@ function composeChina(prevPc,fixed,seed){
   const T={
     mode:'china',code:seed.toString(36)+'-'+ki+'c',name:pick(cfg.adj)+' '+pick(cfg.noun),minor:false,keyPc:keyPc,scaleName:scaleName,
     bpm:cfg.bpm[0]+rnd(cfg.bpm[1]-cfg.bpm[0]+1),swing:0,melVoice:'flute',leadA:leadA,leadB:leadA==='flute'?'erhu':'flute',
-    kpool:kpool,idx0:idx0,progA:CPROG[ia],progB:CPROG[ib],zintro:pick(CZ_INTRO),zflow:pick(CZ_FLOW),zbusy:pick(CZ_BUSY),bus:null,dbus:null
+    kpool:kpool,idx0:idx0,progA:CPROG[ia],progB:CPROG[ib],zintro:pick([CZ_LH4,CZ_LH1]),zflow:pick([CZ_LH1,CZ_LH1,CZ_LH2]),zbusy:pick([CZ_LH3,CZ_LH2]),bus:null,dbus:null
   };
   const pa=jPhrase(mpool,keyPc,false,false,null);
   const pa2=jPhrase(mpool,keyPc,false,true,{rhy:[pa.motif.rhy[0],pa.motif.rhy[1]],con:[pa.motif.con[0],pa.motif.con[1]],start:pa.motif.start});
@@ -467,22 +469,18 @@ function scheduleChinaBar(T,t0,bar,sec,bi,e,st,ending){
   const d=(busy?T.progB:T.progA)[bi],kp=T.kpool,c=T.idx0+d;
   const kn=i=>kp[clamp(i,0,kp.length-1)];
   const hum=()=>(Math.random()-0.5)*0.016;
-  /* guzheng: a steady stream of eighth notes, with a deep note under the bar */
-  const pat=sec===0?T.zintro:(busy?T.zbusy:T.zflow);
-  const gv=sec===0?0.55:(busy?0.46:0.4);
+  /* guzheng left hand: quiet at the top of the bar, then a rising broken chord; the last bar of a phrase thins out to breathe */
+  const pat=(sec===0||bi===3)?T.zintro:(busy?T.zbusy:T.zflow);
+  const gv=sec===0?0.55:(busy?0.5:0.44);
   pat.forEach(q=>{
     if(S.lite&&q[0]%2&&sec!==0)return;
-    playSample('dtr',st(q[0])+hum(),kn(c+q[1]),q[0]===0?gv+0.08:(q[0]%2===0?gv:gv-0.07),1.4,bus);
+    playSample('dtr',st(q[0])+hum(),kn(c+q[1]),q[0]===4?gv+0.1:(q[0]%2===0?gv:gv-0.07),1.4,bus);
   });
-  playSample('dtr',t0+hum(),kn(T.idx0-5+(d>2?2:0)),0.5,1.8,bus);
-  if(busy&&!S.lite)playSample('dtr',st(4)+hum(),kn(T.idx0-3+d),0.32,1.6,bus);
   /* a fast sweep down the strings to close a phrase (up, once, in the prelude) */
   if(bi===3&&(sec===0||sec===2||sec===4||sec===7)){
     const down=sec!==0;
     for(let k=0;k<8;k++)playSample('dtr',st(6)+k*0.07,kn(T.idx0+(down?8-k:k+1)),0.26+(down?(7-k):k)*0.03,1.2,bus);
   }
-  /* a rippling run up the strings at the start of alternate bars: the flowing, water-like guzheng sound */
-  if(!S.lite&&sec>=1&&sec<=6&&bi%2===0)for(let k=0;k<6;k++)playSample('dtr',t0+k*0.06,kn(T.idx0+d+k),0.2+k*0.03,1.0,bus);
   uiQ.push({t:t0,k:'kick'});
   const pk=PLAN[sec].ph;
   if(pk&&T[pk]){
@@ -502,7 +500,8 @@ function scheduleChinaBar(T,t0,bar,sec,bi,e,st,ending){
         playSample(other,t+0.04,om,0.45,nd,bus);
       }
       /* guzheng tremolo on the long notes */
-      if(!S.lite&&n.dur>=4&&Math.random()<0.5)for(let k=1;k<=5;k++)playSample('dtr',t+0.11*k,n.midi,0.42-k*0.06,0.3,bus);
+      /* the right hand rolls a long note in a fast tremolo, as a guzheng or pipa does */
+      if(!S.lite&&n.dur>=3){const cnt=Math.min(14,Math.floor(Math.min(nd,1.4)/0.075));for(let k=1;k<=cnt;k++)playSample('dtr',t+0.075*k,n.midi,Math.max(0.12,0.42-k*0.02),0.3,bus);}
       uiQ.push({t:t,k:'note',m:n.midi});
     });
   }
