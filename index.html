@@ -170,7 +170,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v53';
+const BUILD='looplight-v54';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -2113,6 +2113,8 @@ function renderFlips(){
     b.addEventListener('click',()=>flipCard(m));box.appendChild(b);
   });
 }
+/* on a side that plays recordings, check for them straight away so the screen shows the recorded version, not a generated tune */
+function recShow(){const m=mode;noirProbe().then(()=>{if(mode===m&&recMode()&&noirRec){noirUi();$('upnext').innerHTML='';}});}
 function switchModeCore(m){
   recSwap(mode,m);
   mode=m;nextTune=null;const cfg=MODES[m];
@@ -2122,7 +2124,7 @@ function switchModeCore(m){
   if(ac){toneLP.frequency.setTargetAtTime(cfg.tone,ac.currentTime,0.3);mainBus.gain.setTargetAtTime(0.9*cfg.trim,ac.currentTime,0.3);drumMain.gain.setTargetAtTime(0.9*cfg.trim,ac.currentTime,0.3);}
   flies.length=0;
   if(ac){applyLite();applyTexture();}
-  if(REC[m]){if(playing)noirEnter();}else noirStop();
+  if(REC[m]){if(playing)noirEnter();else recShow();}else noirStop();
   saveSettings();renderAmbVols();
 }
 function setMode(m){if(m===mode||MODE_ORDER.indexOf(m)<0)return;switchModeCore(m);nextNow();}
@@ -2197,6 +2199,7 @@ function renderPlayBtn(){playBtn.innerHTML=playing?ICON_PAUSE+'<span>Pause</span
 function renderStatus(){shown=null;$('status').innerHTML=loadingBand?'<b>'+(mode==='noir'?'Warming up the sax…':mode==='china'?'Tuning the guzheng…':'Tuning the koto…')+'</b>':'';}
 let shown=null;
 function renderTune(T,bar){
+  if(recMode()&&noirRec){noirUi();$('upnext').innerHTML='';return;}
   if(shown!==T){
     shown=T;
     updateMediaSession();
@@ -2476,6 +2479,7 @@ window.addEventListener('resize',layout);
 requestAnimationFrame(frame);
 $('replay').addEventListener('submit',e=>{e.preventDefault();playCode($('codeIn').value);});
 $('codeBtn').addEventListener('click',()=>{const t=tune.code;$('codeIn').value=t;try{navigator.clipboard.writeText(t).then(()=>{$('codeTxt').textContent='copied';setTimeout(()=>{$('codeTxt').textContent=tune.code;},900);},()=>{});}catch(e){}});
+if(REC[mode])recShow();
 window.__cozy={noir:()=>({decks:noirDecks,act:noirAct,list:noirList,rec:noirRec}),ps:(...a)=>playSample(...a),getBus:()=>mainBus,init:()=>{initAudio();return loadSamples();},smp:()=>smpReady()?2:0,reduction:()=>({comp:comp_&&comp_.reduction,lim:lim_&&lim_.reduction}),setMode:setMode,flip:flipCard,mode:()=>mode,mute:()=>{window.__muted=1;master.gain.value=0;},parse:parseCode,compose:compose,ctx:()=>ac,info:()=>({tune:tune,barNum:barNum,barCount:barCount})};
 })();
 
