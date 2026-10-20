@@ -170,7 +170,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v43';
+const BUILD='looplight-v44';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -1461,8 +1461,14 @@ function scheduleTsugaruBar(T,t0,bar,sec,bi,e,st,ending){
     const quiet=sec===0?0.55:(sec===7?0.8:1);
     T[pk][bi].forEach(n=>{
       const t=st(n.step)+hum(),nd=Math.min(4,n.dur*e*0.95),vv=(n.v||1)*quiet;
-      voiceSham(t,n.midi,vv,nd,false,0.15,false);
-      if(n.acc&&!S.lite)noiseHit(t,0.05,'bandpass',800,1.1,0.04*vv,bus);
+      voiceSham(t,n.midi,vv,nd,false,0.15,false,true);
+      if(n.acc&&!S.lite){
+        noiseHit(t,0.05,'bandpass',800,1.1,0.04*vv,bus);
+        /* the body of the shamisen answers a hard strike with a low thump an octave down */
+        const o=ac.createOscillator(),og=ac.createGain();o.type='sine';o.frequency.value=mtof(n.midi-12);
+        og.gain.setValueAtTime(0.0001,t);og.gain.linearRampToValueAtTime(0.09*vv,t+0.006);og.gain.exponentialRampToValueAtTime(0.0001,t+Math.min(0.5,0.12+nd*0.5));
+        o.connect(og);og.connect(bus);o.start(t);o.stop(t+0.6);
+      }
       uiQ.push({t:t,k:'note',m:n.midi});
     });
   }
@@ -1685,7 +1691,7 @@ function shamBuf(m){
   buf._f=sr/(N+0.5);
   shamCache[key]=buf;return buf;
 }
-function voiceSham(t,m,v,dur,bright,gain,slide){
+function voiceSham(t,m,v,dur,bright,gain,slide,warm){
   const buf=shamBuf(m),src=ac.createBufferSource();src.buffer=buf;
   const rate=mtof(m)/buf._f;
   if(slide){src.playbackRate.setValueAtTime(rate*0.972,t);src.playbackRate.linearRampToValueAtTime(rate,t+0.06);}else src.playbackRate.value=rate;
@@ -1696,7 +1702,9 @@ function voiceSham(t,m,v,dur,bright,gain,slide){
   const g=ac.createGain(),end=t+Math.max(0.12,dur);
   g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(G*v,t+0.002);
   g.gain.setValueAtTime(G*v,end);g.gain.exponentialRampToValueAtTime(0.0001,end+0.14);
-  src.connect(hp);hp.connect(body);body.connect(lp);lp.connect(g);g.connect(bus);
+  if(warm){const ls=ac.createBiquadFilter();ls.type='lowshelf';ls.frequency.value=320;ls.gain.value=9;src.connect(hp);hp.connect(ls);ls.connect(body);}
+  else{src.connect(hp);hp.connect(body);}
+  body.connect(lp);lp.connect(g);g.connect(bus);
   src.start(t);src.stop(end+0.18);
   if(!S.lite)noiseHit(t,0.03,'bandpass',1500,0.9,0.02*v,bus);
 }
@@ -1781,7 +1789,7 @@ function scheduleBar(t0){
   const dropOut=ending||(sec===3&&bi<2);
 
   if(bar===0)delayNode.delayTime.setTargetAtTime(60/T.bpm,t0,0.08);
-  if(bar===0&&T.mode==='japan'){const ts=T.style==='tsu';sendNodes.r.gain.setTargetAtTime(S.lite?0:(ts?0.38:MODES.japan.reverb),t0,0.3);toneLP.frequency.setTargetAtTime(ts?3600:MODES.japan.tone,t0,0.3);mainBus.gain.setTargetAtTime(0.9*MODES.japan.trim*(ts?0.55:1),t0,0.3);}
+  if(bar===0&&T.mode==='japan'){const ts=T.style==='tsu';sendNodes.r.gain.setTargetAtTime(S.lite?0:(ts?0.38:MODES.japan.reverb),t0,0.3);toneLP.frequency.setTargetAtTime(ts?3600:MODES.japan.tone,t0,0.3);if(hpNode)hpNode.frequency.setTargetAtTime(ts?(S.bass?55:75):hpFreq(),t0,0.2);mainBus.gain.setTargetAtTime(0.9*MODES.japan.trim*(ts?0.55:1),t0,0.3);}
   /* transitions: the new tune swells in over its first bar; the old one thins out over its last two, then its reverb and delay tails ring away */
   const barLen=e*8;
   if(bar===0){
