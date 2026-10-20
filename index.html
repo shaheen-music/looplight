@@ -637,6 +637,34 @@ function noirBass(ch,nx,walk){
   const approach=noirFit(nr+(R()<0.5?-1:1));
   return [{b:0,m:noirFit(r),d:1},{b:1,m:R()<0.5?third:fifth,d:1},{b:2,m:R()<0.5?fifth:noirFit(r+12),d:1},{b:3,m:approach,d:1}];
 }
+/* ---- Phrases lifted from the real 1940s noir ballad (its tenor and alto sax lines): each is a rhythm and a contour. [start, length, interval from the last note], counted in half triplet steps, 24 to a bar. The tune re-fits each one to its own chords, keeping the real timing and shape. ---- */
+const NPH=[{"L":28,"e":[[0,2,0],[2,1,3],[3,1,4],[5,1,7],[7,1,-2],[8,1,2],[9,1,-7],[10,2,-4],[12,2,-3],[14,2,-5],[16,2,3],[18,2,-1],[20,8,-1]]},{"L":27,"e":[[0,2,0],[2,1,4],[3,2,3],[5,2,5],[7,2,-2],[9,2,-3],[11,2,3],[13,2,-2],[15,12,0]]},{"L":27,"e":[[0,2,0],[2,1,3],[3,2,4],[5,2,5],[7,2,2],[9,4,1],[13,2,-3],[15,12,-4]]},{"L":37,"e":[[0,2,0],[2,4,5],[6,2,2],[8,3,1],[11,2,4],[13,4,5],[17,2,5],[19,10,0],[29,2,-2],[31,2,2],[33,2,-2],[35,2,2]]},{"L":26,"e":[[0,2,0],[2,1,12],[3,1,-2],[5,1,-3],[6,1,-3],[7,1,-3],[9,1,-1],[10,1,-2],[12,1,-3],[13,1,-3],[15,1,6],[16,10,-2]]},{"L":16,"e":[[0,2,0],[2,1,5],[3,1,-5],[4,1,-2],[5,1,0],[6,1,-2],[7,9,-3]]},{"L":32,"e":[[0,4,0],[4,4,5],[8,2,3],[10,4,4],[14,2,5],[16,2,-7],[18,2,-2],[20,10,2],[30,2,-5]]},{"L":35,"e":[[0,2,0],[2,1,2],[3,2,3],[5,6,-3],[11,2,3],[13,2,2],[15,8,2],[23,2,-7],[25,2,3],[27,2,2],[29,6,-2]]},{"L":29,"e":[[0,4,0],[4,2,-2],[6,2,-3],[8,2,-3],[10,2,-3],[12,2,-3],[14,1,-3],[15,1,-3],[17,2,3],[19,10,-2]]},{"L":33,"e":[[0,1,0],[1,2,2],[3,1,3],[4,1,2],[6,1,3],[7,1,2],[8,3,2],[11,6,3],[17,2,-3],[19,2,-9],[21,12,4]]},{"L":41,"e":[[0,1,0],[1,1,3],[2,2,2],[4,2,1],[6,2,-1],[8,1,-5],[9,2,-3],[11,1,-3],[12,2,-1],[14,1,-1],[16,1,1],[17,2,8],[19,6,-1],[25,2,-7],[27,2,3],[29,2,4],[31,2,-7],[33,8,3]]},{"L":41,"e":[[0,2,0],[2,2,5],[4,1,-5],[5,1,-1],[6,2,-3],[8,6,2],[14,2,-2],[17,4,-3],[21,2,-5],[23,4,0],[27,2,3],[29,12,0]]},{"L":46,"e":[[0,2,0],[2,4,2],[6,2,3],[8,4,4],[12,2,5],[14,6,-6],[21,6,-3],[27,4,-3],[31,2,3],[33,13,0]]},{"L":28,"e":[[0,1,0],[1,2,2],[3,2,3],[5,1,11],[6,1,-2],[8,1,-2],[9,2,-4],[11,1,-4],[12,1,-3],[14,2,-2],[16,2,-2],[18,1,7],[19,1,-4],[21,1,2],[22,2,-5],[24,4,3]]},{"L":32,"e":[[0,2,0],[2,1,5],[3,2,2],[5,2,1],[7,1,2],[8,2,2],[10,2,-7],[12,2,7],[14,2,0],[16,1,-2],[17,5,2],[23,9,0]]},{"L":29,"e":[[0,1,0],[1,2,1],[3,2,8],[5,2,3],[7,1,-3],[8,2,-2],[10,1,-2],[11,2,2],[13,7,2],[20,9,0]]},{"L":27,"e":[[0,5,0],[5,1,-3],[7,1,-4],[8,1,-1],[10,2,-1],[12,1,9],[13,1,-3],[14,1,-4],[16,1,-2],[17,2,-3],[19,1,-3],[20,1,-3],[21,6,-1]]},{"L":15,"e":[[0,2,0],[2,1,7],[3,1,-4],[4,2,2],[6,1,-5],[7,8,3]]},{"L":37,"e":[[0,2,0],[2,1,7],[3,1,1],[5,1,-3],[6,2,-5],[8,1,7],[9,2,1],[11,1,-3],[12,2,-5],[14,1,-2],[15,2,-2],[17,2,-3],[19,4,7],[23,2,-4],[25,2,2],[27,2,-2],[29,8,4]]},{"L":34,"e":[[0,2,0],[2,2,3],[4,2,2],[6,2,-2],[8,2,-4],[10,2,1],[12,2,3],[14,2,2],[16,1,-6],[17,1,-1],[18,2,-2],[20,2,-3],[22,12,3]]},{"L":14,"e":[[0,2,0],[2,2,6],[4,1,-1],[5,1,-2],[6,2,-3],[8,6,7]]},{"L":21,"e":[[0,1,0],[1,1,3],[2,1,2],[3,2,2],[5,2,-4],[7,1,-3],[8,2,-5],[10,2,-4],[12,2,-3],[14,1,7],[15,6,-2]]},{"L":18,"e":[[0,1,0],[1,2,2],[3,2,3],[5,1,4],[6,2,3],[8,10,-2]]},{"L":20,"e":[[0,1,0],[1,2,1],[3,2,4],[5,2,3],[7,1,4],[8,1,-2],[9,1,-3],[11,1,-4],[12,2,-1],[14,6,-1]]},{"L":23,"e":[[0,2,0],[2,1,2],[3,2,3],[5,1,2],[6,1,-2],[7,16,4]]},{"L":24,"e":[[0,1,0],[1,1,-2],[2,2,5],[4,7,-3],[11,2,-5],[13,1,-4],[14,1,2],[15,2,-5],[17,7,3]]},{"L":24,"e":[[0,2,0],[2,2,2],[4,2,3],[6,1,4],[7,1,-2],[9,1,-2],[10,14,2]]},{"L":24,"e":[[0,1,0],[1,1,2],[2,2,3],[4,2,4],[6,2,3],[8,1,2],[9,1,-5],[10,1,-4],[11,1,2],[13,11,-2]]},{"L":31,"e":[[0,2,0],[2,3,2],[5,4,3],[9,2,-3],[11,2,-5],[13,11,10],[25,6,2]]},{"L":25,"e":[[0,2,0],[2,2,9],[4,2,3],[6,2,-3],[8,3,0],[11,2,-9],[13,4,9],[17,8,-4]]},{"L":17,"e":[[0,2,0],[2,1,-3],[3,1,-1],[4,1,-1],[5,1,-2],[6,1,-3],[7,1,-2],[9,1,-3],[10,2,-2],[12,5,11]]},{"L":16,"e":[[0,2,0],[2,1,3],[3,1,-1],[5,1,-1],[6,2,-1],[8,1,-2],[9,1,-2],[10,1,0],[11,5,-1]]},{"L":17,"e":[[0,2,0],[2,2,8],[4,13,-3]]},{"L":44,"e":[[0,1,0],[1,1,5],[3,1,3],[4,1,4],[5,1,5],[6,1,3],[7,2,-3],[9,12,5],[21,1,0],[22,1,-2],[24,1,-3],[25,1,-4],[26,1,-3],[27,1,-5],[28,1,-4],[29,1,-3],[30,1,0],[31,1,1],[32,2,1],[34,10,12]]},{"L":22,"e":[[0,1,0],[1,1,4],[3,1,3],[4,2,3],[6,1,-2],[7,2,-4],[9,1,3],[10,12,-2]]},{"L":34,"e":[[0,1,0],[1,2,3],[3,1,2],[4,1,2],[5,1,1],[7,2,2],[9,1,2],[10,1,5],[12,1,-6],[13,2,-3],[15,2,2],[17,1,-5],[18,3,3],[21,4,4],[25,2,-7],[27,4,3],[32,2,2]]},{"L":29,"e":[[0,1,0],[1,1,2],[2,2,-6],[4,1,1],[5,1,7],[7,1,-4],[8,2,-4],[10,1,-4],[11,1,8],[12,1,-4],[14,1,-4],[15,1,-4],[16,1,7],[18,11,-2]]},{"L":39,"e":[[0,5,0],[5,1,-3],[7,1,-2],[8,1,-2],[10,1,-1],[11,2,5],[13,2,-5],[15,1,-1],[16,2,6],[18,1,-6],[19,2,-3],[21,8,2],[29,2,3],[31,1,2],[32,1,-2],[33,1,5],[34,1,-2],[35,1,1],[36,1,-7],[37,2,3]]},{"L":9,"e":[[0,2,0],[2,2,-7],[4,1,3],[5,1,2],[6,3,-2]]}];
+function noirPoolR(ch,which,lo,hi){
+  const rels=NQ[ch.q][which],out=[];
+  for(let m=lo;m<=hi;m++){const r=((m-ch.pc)%12+12)%12;if(rels.indexOf(r)>=0)out.push(m);}
+  return out;
+}
+const noirPick=(minL,maxL,minN,maxN)=>{const c=NPH.filter(p=>p.L>=minL&&p.L<=maxL&&p.e.length>=minN&&p.e.length<=maxN);return pick(c.length?c:NPH);};
+/* drop a phrase into a four-bar section at half-step 'at'; returns where it ends */
+function noirPlace(ph,chords,at,startP,v,bars){
+  const ideal=[];let cur=0,mn=0,mx=0;
+  ph.e.forEach(e=>{cur+=e[2];ideal.push(cur);if(cur<mn)mn=cur;if(cur>mx)mx=cur;});
+  let base=startP;
+  while(base+mx>74)base-=12;
+  while(base+mn<50)base+=12;
+  let end=at;
+  ph.e.forEach((e,i)=>{
+    const p=at+e[0];if(p>=96)return;
+    const b=Math.floor(p/24),ch=chords[b],strong=(e[0]%6===0)||e[1]>=4;
+    const m=noirNearest(noirPoolR(ch,strong?'ct':'sc',48,76),base+ideal[i]);
+    const last=i===ph.e.length-1,len=Math.min(e[1],96-p);
+    bars[b].push({s:(p-24*b)/2,d:len/2,m:m,v:Math.min(0.9,(v+(i===0?0.05:0)+R()*0.08-0.04)*(len>=4?1.05:1)),
+      sc:(i===0&&len>=4&&R()<0.4)?(R()<0.5?1:2):0,fl:last&&len>=6&&R()<0.55,br:i===0,gr:0});
+    end=Math.max(end,p+len);
+  });
+  return end;
+}
+function noirBuild(chords,items,v){const bars=[[],[],[],[]];items.forEach(x=>noirPlace(x.ph,chords,x.at,x.sp,v,bars));return bars;}
 function composeNoir(prevPc,fixed,seed){
   const cfg=MODES.noir;
   const minor=R()<cfg.minorP;
@@ -666,17 +694,25 @@ function composeNoir(prevPc,fixed,seed){
     else T.comp.push(pick([[0],[0],[0,6],[0,6],[0,7],[0,9],[0,3]]));
   }
   /* melody: a soft hint in the intro, the head and a varied answer, a bridge that starts high and comes down, the head again unchanged, a solo of longer runs, a sparse outro */
-  const start=pick([55,57,58,60]);
-  const headA=noirSection(cA,['full','echo','full','held'],start,1,0.62);
-  const hint=noirSection(cA,['held','echo','full','held'],start,1,0.5);
-  const headA2=noirCopy(headA);
-  headA2[2]=noirBarPhrase(cA[2],'full',headA[1].length?headA[1][headA[1].length-1].m:start,1,0.62);
-  const bridge=noirSection(cB,['full','full','echo','held'],start+7,-1,0.68);
-  const bridge2=noirCopy(bridge);
-  bridge2[1]=noirBarPhrase(cB[1],'full',bridge[0].length?bridge[0][bridge[0].length-1].m:start+4,-1,0.68);
+  const start=pick([57,60,62,64]);
+  const P1=noirPick(24,42,8,16),P2=noirPick(16,36,5,12),P3=noirPick(16,36,5,12);
+  const o2=pick([0,6]),sp2=start+pick([-2,0,2]);
+  const hint=noirBuild(cA,[{ph:noirPick(12,26,3,9),at:0,sp:start}],0.5);
+  const headA=noirBuild(cA,[{ph:P1,at:0,sp:start},{ph:P2,at:48+o2,sp:sp2}],0.62);
+  const headA2=noirBuild(cA,[{ph:P1,at:0,sp:start},{ph:P3,at:48+o2,sp:sp2}],0.62);
+  const B1=noirPick(26,44,8,16),B2=noirPick(16,36,5,12),B3=noirPick(16,36,5,12);
+  const bridge=noirBuild(cB,[{ph:B1,at:pick([0,6]),sp:start+5},{ph:B2,at:48+o2,sp:start+3}],0.68);
+  const bridge2=noirBuild(cB,[{ph:B1,at:pick([0,6]),sp:start+5},{ph:B3,at:48+o2,sp:start+2}],0.68);
   const ret=noirCopy(headA);
-  const solo=noirSection(cA2,['full','full','full',R()<0.5?'held':'echo'],start+3,1,0.64);
-  const outro=noirSection(cA,['full','held','long',''],start,1,0.46);
+  /* solo: phrases one after another with short breaths between */
+  const soloItems=[];let at=0;
+  for(let i=0;i<3&&at<=72;i++){
+    const ph=i===2?noirPick(12,24,4,9):noirPick(20,36,8,16),bars=[[],[],[],[]];
+    soloItems.push({ph:ph,at:at,sp:start+pick([0,2,3])});
+    at=at+ph.L+pick([4,6,8]);
+  }
+  const solo=noirBuild(cA2,soloItems,0.64);
+  const outro=noirBuild(cA,[{ph:noirPick(14,30,3,8),at:0,sp:start}],0.46);
   T.mel=[hint,headA,headA2,bridge,bridge2,ret,solo,outro];
   return T;
 }
@@ -2118,7 +2154,7 @@ window.__cozy={smp:()=>smpReady()?2:0,reduction:()=>({comp:comp_&&comp_.reductio
 })();
 
 /* installable app: the page is fetched fresh whenever you are online and kept for offline use */
-const BUILD='looplight-v23';
+const BUILD='looplight-v24';
 function showUpdateNotice(){
   if(document.getElementById('updNote'))return;
   const d=document.createElement('div');d.id='updNote';d.className='updnote';d.setAttribute('role','status');
