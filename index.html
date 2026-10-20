@@ -202,7 +202,7 @@ const MODES={
     adj:['Misty','Jade','Spring','Lotus','Distant','Silken','Morning','Quiet','Golden','Orchid','Winding','Moonlit'],
     noun:['Pavilion','River','Lotus Pond','Bamboo Grove','West Lake','Mountain Path','Lantern','Teahouse','Willow','Stone Bridge','Plum Blossom','Dawn']},
   noir:{title:'Jazz Noir',tagline:'Tenor sax · piano · a smoky late-night room',flipTo:'Flip to Cozy',bpm:[64,74],swing:[0.33,0.33],minorP:0.55,
-    voices:['sax'],trim:1.1,reverb:0.55,tone:3200,whoosh:false,hatFrom:99,kickFrom:99,hatMul:1,kickV:1,snare:false,ghost:false,bassDur:[2,2],
+    voices:['sax'],trim:1.1,reverb:0.55,tone:4800,whoosh:false,hatFrom:99,kickFrom:99,hatMul:1,kickV:1,snare:false,ghost:false,bassDur:[2,2],
     plan:['Intro','Head','Head 2','Bridge','Bridge 2','Return','Solo','Outro'],
     adj:['Smoky','Midnight','Velvet','Blue','Lonely','Last','Rainy','Slow','Amber','Hushed','Neon','Faded'],
     noun:['Lounge','Alley','Corner','Cigar','Window','Boulevard','Platform','Hotel','Streetlight','Stairwell','Taxi','Last Call']}
@@ -1299,8 +1299,9 @@ const SMP_CFG={
   koto:{sus:false,a:0.004,rel:0.4,lp:2800,norm:'peak',target:0.3},
   shaku:{sus:true,a:0.14,rel:0.5,vib:4,lp:2300,norm:'rms',target:0.04},
   taiko:{sus:false,a:0.004,rel:0.5,norm:'peak',target:0.4},
-  sax:{sus:true,a:0.02,rel:0.3,vib:0,lp:3800,norm:'rms',target:0.1},
-  saxv:{sus:true,a:0.02,rel:0.4,vib:0,lp:3800,norm:'rms',target:0.1},
+  sax:{sus:true,a:0.02,rel:0.3,vib:0,lp:5600,norm:'rms',target:0.1},
+  saxl:{sus:true,a:0.02,rel:0.3,vib:0,lp:5600,norm:'rms',target:0.1},
+  saxv:{sus:true,a:0.02,rel:0.4,vib:0,lp:5600,norm:'rms',target:0.1},
   dtr:{sus:false,a:0.008,rel:0.4,lp:2400,norm:'peak',target:0.35},
   piano:{sus:false,a:0.004,rel:0.5,norm:'peak',target:0.3},
   bass:{sus:false,a:0.006,rel:0.25,norm:'peak',target:0.4},
@@ -1310,7 +1311,7 @@ const SMP_CFG={
 let SMP=null,loadingBand=false,smpLoad={};
 function b64buf(b){const bin=atob(b),n=bin.length,u=new Uint8Array(n);for(let i=0;i<n;i++)u[i]=bin.charCodeAt(i);return u.buffer;}
 /* each side only decodes the recordings it plays: koto, shakuhachi and taiko for Japanese Classical, the saxophone for Jazz Noir */
-const smpWant=()=>(mode==='japan'?['koto','shaku','taiko']:mode==='noir'?['sax','saxv','piano','bass']:mode==='china'?['dtr','flute','erhu']:[]);
+const smpWant=()=>(mode==='japan'?['koto','shaku','taiko']:mode==='noir'?['sax','saxl','saxv','piano','bass']:mode==='china'?['dtr','flute','erhu']:[]);
 const smpHas=i=>!!(SMP&&SMP[i]&&SMP[i].keys.length);
 const smpScript={};
 /* each instrument's recordings are their own small file, fetched the first time a side needs them (and kept for offline use) */
@@ -1354,8 +1355,10 @@ function playSample(inst,t,midi,v,dur,dest,opt){
   const hold=Math.max(0.12,dur),rel=(opt&&opt.rel)||cfg.rel;
   g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(peak,t+cfg.a);
   let end=t+hold;
+  const isSax=inst.indexOf('sax')===0;
+  if(isSax&&hold>0.45){const pk2=peak*1.1;g.gain.linearRampToValueAtTime(pk2,t+hold*0.3);g.gain.linearRampToValueAtTime(peak*0.86,end);}
   if(cfg.sus||(opt&&opt.cut)){
-    g.gain.setValueAtTime(peak,end);g.gain.linearRampToValueAtTime(0.0001,end+rel);end+=rel+0.04;
+    g.gain.setValueAtTime(isSax&&hold>0.45?peak*0.86:peak,end);g.gain.linearRampToValueAtTime(0.0001,end+rel);end+=rel+0.04;
   }else end=t+smp.buf.duration/rate;
   end=Math.min(end,t+(smp.buf.duration-smp.on)/rate);
   if(cfg.vib&&!S.lite){
@@ -1363,7 +1366,6 @@ function playSample(inst,t,midi,v,dur,dest,opt){
     lg.gain.setValueAtTime(0,t);lg.gain.linearRampToValueAtTime(cfg.vib*(hold>0.8?1:0.3),t+Math.min(0.9,hold*0.8));
     l.connect(lg);lg.connect(src.detune);l.start(t);l.stop(end+0.05);
   }
-  const isSax=inst.indexOf('sax')===0;
   if(opt&&opt.scoop){src.detune.setValueAtTime(isSax?-70:-170,t);src.detune.linearRampToValueAtTime(0,t+(isSax?0.1:0.2));}
   if(opt&&opt.fall){src.detune.setValueAtTime(0,t+hold-0.05);src.detune.linearRampToValueAtTime(isSax?-120:-220,t+hold+rel);}
   if(cfg.lp&&!S.lite){const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=cfg.lp;lp.Q.value=0.5;src.connect(lp);lp.connect(g);}else src.connect(g);
@@ -1545,7 +1547,7 @@ function scheduleNoirBar(T,t0,bar,sec,bi,e,st12,ending){
     if(n.br&&!S.lite)voiceBreath(Math.max(t0-0.05,t-0.24),n.v);
     if(n.gr&&!S.lite){if(smpHas('sax'))playSample('sax',t-0.1,n.m-1,n.v*0.6,0.1,bus);else voiceSax(t-0.11,mtof(n.m-1),0.12,n.v*0.7,{});}
     const sd=Math.min(4.2,n.d*u*0.97+0.03);
-    if(smpHas('sax'))playSample(sd>=1.1&&smpHas('saxv')?'saxv':'sax',t,n.m,n.v,sd,bus,{scoop:n.sc,fall:n.fl});
+    if(smpHas('sax'))playSample(sd>=1.1&&smpHas('saxv')?'saxv':(n.v>=0.8&&smpHas('saxl')?'saxl':'sax'),t,n.m,n.v,sd,bus,{scoop:n.sc,fall:n.fl});
     else voiceSax(t,mtof(n.m),Math.min(4,sd),n.v,{scoop:n.sc,fall:n.fl});
     uiQ.push({t:t,k:'note',m:n.m});
   });
@@ -2232,7 +2234,7 @@ window.__cozy={smp:()=>smpReady()?2:0,reduction:()=>({comp:comp_&&comp_.reductio
 })();
 
 /* installable app: the page is fetched fresh whenever you are online and kept for offline use */
-const BUILD='looplight-v27';
+const BUILD='looplight-v28';
 function showUpdateNotice(){
   if(document.getElementById('updNote'))return;
   const d=document.createElement('div');d.id='updNote';d.className='updnote';d.setAttribute('role','status');
