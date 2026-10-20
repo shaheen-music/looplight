@@ -13,3 +13,7 @@ The Silk & Bamboo flute and erhu (violin) notes come from the FluidR3_GM soundfo
 ## Jazz Noir recordings
 
 Jazz Noir plays the recordings in `audio/jazz-noir/` (`noir-01.mp3` ... `noir-40.mp3`): shuffled, crossfaded, endless. See `audio/jazz-noir/README.md`.
+
+## Tsugaru transcriptions
+
+The Japanese Classical side plays real Tsugaru-jamisen pieces (Tsugaru Jonkara Kyūbushi, Kuroishi Yosare Bushi, Tsugaru Jinku, Tsugaru Shiogama Jinku, Yasaburō Bushi, Kokiriko Bushi). The note data embedded in `index.html` comes from the transcriptions in [threedaymonk/tsugaru](https://github.com/threedaymonk/tsugaru) (shamisen.space), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). That data is therefore shared under the same licence. The sound itself is synthesized by the app.
