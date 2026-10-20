@@ -1367,6 +1367,14 @@ function playSample(inst,t,midi,v,dur,dest,opt){
     g.gain.setValueAtTime(isSax&&hold>0.45?peak*0.86:peak,end);g.gain.linearRampToValueAtTime(0.0001,end+rel);end+=rel+0.04;
   }else end=t+smp.buf.duration/rate;
   end=Math.min(end,t+(smp.buf.duration-smp.on)/rate);
+  const isSaxV=inst==='sax'||inst==='saxp';
+  if(isSaxV&&!S.lite&&hold>0.6&&!(opt&&opt.leg)){
+    /* a player's vibrato comes in late on a held note, slow and uneven */
+    const l=ac.createOscillator();l.frequency.value=4.8+Math.random()*0.9;const lg=ac.createGain(),d0=Math.min(0.45,hold*0.4);
+    lg.gain.setValueAtTime(0,t);lg.gain.setValueAtTime(0,t+d0);lg.gain.linearRampToValueAtTime(14+Math.random()*10,t+d0+0.6);
+    l.connect(lg);lg.connect(src.detune);l.start(t);l.stop(end+0.05);
+  }
+  if(isSaxV)src.detune.value=(Math.random()-0.5)*14;
   if(cfg.vib&&!S.lite){
     const l=ac.createOscillator();l.frequency.value=4.6+Math.random()*0.4;const lg=ac.createGain();
     lg.gain.setValueAtTime(0,t);lg.gain.linearRampToValueAtTime(cfg.vib*(hold>0.8?1:0.3),t+Math.min(0.9,hold*0.8));
@@ -1534,20 +1542,21 @@ function scheduleNoirBar(T,t0,bar,sec,bi,e,st12,ending){
   const intro=sec===0,outro=sec===7;
   const vox=T.vox[bar],vox2=T.vox2&&T.vox2[bar],vAt=st=>(vox2&&st>=6)?vox2:vox,mel=T.mel[sec]?T.mel[sec][bi]:[];
   /* piano: a rolled soft chord, and a gentle arpeggio rolling up and down under the sax when it holds a long note or rests */
-  T.comp[bar].forEach(s=>{
+  const solo=!!window.__SOLO;
+  if(!solo)T.comp[bar].forEach(s=>{
     const vx=vAt(s),t=st(s)+hum(),first=s===0||(vox2&&s===6),v=(first?0.5:0.36)*(intro||outro?0.8:1);
     const n=(S.lite&&!first)?3:vx.length;
     for(let k=0;k<n;k++)playPianoN(t+k*0.03,vx[vx.length-n+k],Math.max(0.2,v-k*0.03),vox2&&s<6?1.4:2.2);
   });
   let saxEnd=0;mel.forEach(n=>{saxEnd=Math.max(saxEnd,n.s+n.d);});
-  if(sec>=1&&sec<=6&&!S.lite&&saxEnd<=9){
+  if(!solo&&sec>=1&&sec<=6&&!S.lite&&saxEnd<=9){
     const from=Math.max(6,saxEnd),seq=[0,1,2,3,2,1];
     for(let s=from;s<12;s++)playPianoN(st(s)+hum(),vAt(s)[seq[(s-from)%seq.length]]+12,0.3-(s-from)*0.02,1.1);
   }
   /* upright bass: half notes in the quiet parts, walking where the tune opens up */
-  T.bass[bar].forEach(n=>{playBassN(st(n.b*3)+hum()*0.5,n.m,n.d*3*u*0.95,(n.b===0?0.75:0.6)*(outro?0.8:1));});
+  if(!solo)T.bass[bar].forEach(n=>{playBassN(st(n.b*3)+hum()*0.5,n.m,n.d*3*u*0.95,(n.b===0?0.75:0.6)*(outro?0.8:1));});
   /* brushes: the classic jazz pattern, a soft circling swish with a lilt on the last triplet of beats two and four, and a gentle sweep on those beats */
-  if(!ending){
+  if(!ending&&!solo){
     const dv=(outro||intro)?0.7:1;
     [[0,0.7,0.24],[3,0.55,0.22],[5,0.35,0.1],[6,0.7,0.24],[9,0.55,0.22],[11,0.35,0.1]].forEach(a=>{if(S.lite&&a[0]%3)return;brushSwish(st(a[0]),a[2],a[1]*dv);});
     brushSweep(st(3),dv*0.7);brushSweep(st(9),dv*0.7);
@@ -2252,11 +2261,11 @@ window.addEventListener('resize',layout);
 requestAnimationFrame(frame);
 $('replay').addEventListener('submit',e=>{e.preventDefault();playCode($('codeIn').value);});
 $('codeBtn').addEventListener('click',()=>{const t=tune.code;$('codeIn').value=t;try{navigator.clipboard.writeText(t).then(()=>{$('codeTxt').textContent='copied';setTimeout(()=>{$('codeTxt').textContent=tune.code;},900);},()=>{});}catch(e){}});
-window.__cozy={smp:()=>smpReady()?2:0,reduction:()=>({comp:comp_&&comp_.reduction,lim:lim_&&lim_.reduction}),setMode:setMode,flip:flipCard,mode:()=>mode,mute:()=>{window.__muted=1;master.gain.value=0;},parse:parseCode,compose:compose,ctx:()=>ac,info:()=>({tune:tune,barNum:barNum,barCount:barCount})};
+window.__cozy={ps:(...a)=>playSample(...a),getBus:()=>mainBus,init:()=>{initAudio();return loadSamples();},smp:()=>smpReady()?2:0,reduction:()=>({comp:comp_&&comp_.reduction,lim:lim_&&lim_.reduction}),setMode:setMode,flip:flipCard,mode:()=>mode,mute:()=>{window.__muted=1;master.gain.value=0;},parse:parseCode,compose:compose,ctx:()=>ac,info:()=>({tune:tune,barNum:barNum,barCount:barCount})};
 })();
 
 /* installable app: the page is fetched fresh whenever you are online and kept for offline use */
-const BUILD='looplight-v31';
+const BUILD='looplight-v32';
 function showUpdateNotice(){
   if(document.getElementById('updNote'))return;
   const d=document.createElement('div');d.id='updNote';d.className='updnote';d.setAttribute('role','status');
