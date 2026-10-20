@@ -417,14 +417,14 @@ function scheduleChinaBar(T,t0,bar,sec,bi,e,st,ending){
   const gv=sec===0?0.55:(busy?0.46:0.4);
   pat.forEach(q=>{
     if(S.lite&&q[0]%2&&sec!==0)return;
-    playSample('koto',st(q[0])+hum(),kn(c+q[1]),q[0]===0?gv+0.08:(q[0]%2===0?gv:gv-0.07),1.4,bus);
+    playSample('dtr',st(q[0])+hum(),kn(c+q[1]),q[0]===0?gv+0.08:(q[0]%2===0?gv:gv-0.07),1.4,bus);
   });
-  playSample('koto',t0+hum(),kn(T.idx0-5+(d>2?2:0)),0.5,1.8,bus);
-  if(busy&&!S.lite)playSample('koto',st(4)+hum(),kn(T.idx0-3+d),0.32,1.6,bus);
+  playSample('dtr',t0+hum(),kn(T.idx0-5+(d>2?2:0)),0.5,1.8,bus);
+  if(busy&&!S.lite)playSample('dtr',st(4)+hum(),kn(T.idx0-3+d),0.32,1.6,bus);
   /* a fast sweep down the strings to close a phrase (up, once, in the prelude) */
   if(bi===3&&(sec===0||sec===2||sec===4||sec===7)){
     const down=sec!==0;
-    for(let k=0;k<8;k++)playSample('koto',st(6)+k*0.07,kn(T.idx0+(down?8-k:k+1)),0.26+(down?(7-k):k)*0.03,1.2,bus);
+    for(let k=0;k<8;k++)playSample('dtr',st(6)+k*0.07,kn(T.idx0+(down?8-k:k+1)),0.26+(down?(7-k):k)*0.03,1.2,bus);
   }
   uiQ.push({t:t0,k:'kick'});
   const pk=PLAN[sec].ph;
@@ -438,14 +438,14 @@ function scheduleChinaBar(T,t0,bar,sec,bi,e,st,ending){
         if(!S.lite&&!long&&Math.random()<0.25){const gm=T.kpool[clamp(T.kpool.indexOf(n.midi)+1,0,T.kpool.length-1)];if(gm!==n.midi&&gm<=82)playSample('flute',t-0.07,gm,0.4,0.07,bus);}
       }else playSample('erhu',t,n.midi,n.step===0?0.95:0.82,nd,bus,{scoop:long?1:0});
       /* the guzheng picks out the strong beats of the tune */
-      if(n.step===0||n.step===4)playSample('koto',t,n.midi,0.5,1.4,bus);
+      if(n.step===0||n.step===4)playSample('dtr',t,n.midi,0.5,1.4,bus);
       /* the second instrument joins softly in the later halves, an octave lower when it is the flute's turn to be below */
       if((sec===2||sec===4||sec===6)&&!S.lite&&long){
         const om=other==='erhu'?n.midi:(n.midi-12>=62?n.midi-12:n.midi);
         playSample(other,t+0.04,om,0.45,nd,bus);
       }
       /* guzheng tremolo on the long notes */
-      if(!S.lite&&n.dur>=4&&Math.random()<0.5)for(let k=1;k<=5;k++)playSample('koto',t+0.11*k,n.midi,0.42-k*0.06,0.3,bus);
+      if(!S.lite&&n.dur>=4&&Math.random()<0.5)for(let k=1;k<=5;k++)playSample('dtr',t+0.11*k,n.midi,0.42-k*0.06,0.3,bus);
       uiQ.push({t:t,k:'note',m:n.midi});
     });
   }
@@ -1190,7 +1190,9 @@ const SMP_CFG={
   koto:{sus:false,a:0.004,rel:0.4,lp:2800,norm:'peak',target:0.3},
   shaku:{sus:true,a:0.14,rel:0.5,vib:4,lp:2300,norm:'rms',target:0.04},
   taiko:{sus:false,a:0.004,rel:0.5,norm:'peak',target:0.4},
-  sax:{sus:true,a:0.07,rel:0.35,vib:10,lp:3600,norm:'rms',target:0.1},
+  sax:{sus:true,a:0.05,rel:0.3,vib:0,lp:3800,norm:'rms',target:0.1},
+  saxv:{sus:true,a:0.06,rel:0.4,vib:0,lp:3800,norm:'rms',target:0.1},
+  dtr:{sus:false,a:0.008,rel:0.4,lp:2400,norm:'peak',target:0.35},
   piano:{sus:false,a:0.004,rel:0.5,norm:'peak',target:0.3},
   bass:{sus:false,a:0.006,rel:0.25,norm:'peak',target:0.4},
   flute:{sus:true,a:0.07,rel:0.3,vib:9,lp:3200,norm:'rms',target:0.062},
@@ -1199,7 +1201,7 @@ const SMP_CFG={
 let SMP=null,loadingBand=false,smpLoad={};
 function b64buf(b){const bin=atob(b),n=bin.length,u=new Uint8Array(n);for(let i=0;i<n;i++)u[i]=bin.charCodeAt(i);return u.buffer;}
 /* each side only decodes the recordings it plays: koto, shakuhachi and taiko for Japanese Classical, the saxophone for Jazz Noir */
-const smpWant=()=>(mode==='japan'?['koto','shaku','taiko']:mode==='noir'?['sax','piano','bass']:mode==='china'?['koto','flute','erhu']:[]);
+const smpWant=()=>(mode==='japan'?['koto','shaku','taiko']:mode==='noir'?['sax','saxv','piano','bass']:mode==='china'?['dtr','flute','erhu']:[]);
 const smpHas=i=>!!(SMP&&SMP[i]&&SMP[i].keys.length);
 const smpScript={};
 /* each instrument's recordings are their own small file, fetched the first time a side needs them (and kept for offline use) */
@@ -1429,7 +1431,7 @@ function scheduleNoirBar(T,t0,bar,sec,bi,e,st12,ending){
     if(n.br&&!S.lite)voiceBreath(Math.max(t0-0.05,t-0.24),n.v);
     if(n.gr&&!S.lite){if(smpHas('sax'))playSample('sax',t-0.1,n.m-1,n.v*0.6,0.1,bus);else voiceSax(t-0.11,mtof(n.m-1),0.12,n.v*0.7,{});}
     const sd=Math.min(4.2,n.d*u*0.97+0.03);
-    if(smpHas('sax'))playSample('sax',t,n.m,n.v,sd,bus,{scoop:n.sc,fall:n.fl});
+    if(smpHas('sax'))playSample(sd>=1.1&&smpHas('saxv')?'saxv':'sax',t,n.m,n.v,sd,bus,{scoop:n.sc,fall:n.fl});
     else voiceSax(t,mtof(n.m),Math.min(4,sd),n.v,{scoop:n.sc,fall:n.fl});
     uiQ.push({t:t,k:'note',m:n.m});
   });
@@ -2116,7 +2118,7 @@ window.__cozy={smp:()=>smpReady()?2:0,reduction:()=>({comp:comp_&&comp_.reductio
 })();
 
 /* installable app: the page is fetched fresh whenever you are online and kept for offline use */
-const BUILD='looplight-v22';
+const BUILD='looplight-v23';
 function showUpdateNotice(){
   if(document.getElementById('updNote'))return;
   const d=document.createElement('div');d.id='updNote';d.className='updnote';d.setAttribute('role','status');
