@@ -170,7 +170,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v42';
+const BUILD='looplight-v43';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -361,7 +361,7 @@ function jPhrase(pool,keyPc,busy,home,motif){
 }
 /* ---- Tsugaru shamisen: fast, percussive, in groups of 3+3+2 sixteenths, with runs, repeated strikes and a held note to close each phrase ---- */
 function tsuPhrase(pool,keyPc,busy,home,motif){
-  const tonics=pool.filter(x=>((x-keyPc)%12+12)%12===0&&x>=60&&x<=76);
+  const tonics=pool.filter(x=>((x-keyPc)%12+12)%12===0&&x>=53&&x<=69);
   const m=motif||{cells:[],start:null};
   if(m.start===null)m.start=pick(tonics.length?tonics:[pool[Math.floor(pool.length/2)]]);
   const G=[0,3,6,8,11,14],bars=[];let prev=m.start;
@@ -387,7 +387,7 @@ function tsuPhrase(pool,keyPc,busy,home,motif){
       seq.forEach((q,p)=>add(p+8,at(q-2),0.5,p%3===0?0.95:0.65,p%3===0));
     }else{
       for(let p=0;p<8;p++){idx=clamp(idx-1,0,pool.length-1);const a=G.indexOf(p)>=0;add(p,at(idx),a?0.9:0.5,a?1:0.7,a);}
-      const tg=home?tonics:pool.filter(x=>((x-keyPc)%12+12)%12===7&&x>=60&&x<=76);
+      const tg=home?tonics:pool.filter(x=>((x-keyPc)%12+12)%12===7&&x>=53&&x<=69);
       const fin=(tg.length?tg:tonics.length?tonics:[at(idx)]);const mid=fin[nearIdx(fin,at(idx))];
       add(8,mid,3.6,1,true);idx=nearIdx(pool,mid);
     }
@@ -403,7 +403,7 @@ function composeJapan(prevPc,fixed,seed){
   let ki=rnd(7);
   if(fixed)ki=fixed.ki;else if(KEYS[ki]===prevPc)ki=(ki+1)%7;
   const keyPc=KEYS[ki];
-  const kpool=jPool(keyPc,sc,38,84),mpool=style==='tsu'?jPool(keyPc,sc,57,81):jPool(keyPc,sc,56,72);
+  const kpool=jPool(keyPc,sc,38,84),mpool=style==='tsu'?jPool(keyPc,sc,48,72):jPool(keyPc,sc,56,72);
   let idx0=0;for(let i=0;i<kpool.length;i++){if(kpool[i]>=48&&((kpool[i]-keyPc)%12+12)%12===0){idx0=i;break;}}
   const ia=rnd(JPROG.length);let ib=rnd(JPROG.length-1);if(ib>=ia)ib++;
   const T={
