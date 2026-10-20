@@ -16,4 +16,4 @@ Jazz Noir's tenor saxophone (with its breath and key-click sounds) uses the MTG 
 
 ## Jazz Noir recordings
 
-Jazz Noir plays real recordings if you put them in `audio/jazz-noir/` (`noir-01.mp3` ... `noir-30.mp3`): shuffled, crossfaded, endless. With none there it uses the generated sax band. See `audio/jazz-noir/README.md`.
+Jazz Noir plays real recordings if you put them in `audio/jazz-noir/` (`noir-01.mp3` ... `noir-40.mp3`): shuffled, crossfaded, endless. With none there it uses the generated sax band. See `audio/jazz-noir/README.md`.

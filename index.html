@@ -170,7 +170,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v40';
+const BUILD='looplight-v41';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -1808,7 +1808,7 @@ document.addEventListener('visibilitychange',()=>{if(playing&&document.visibilit
 /* ===== Jazz Noir: real recordings =====
    If full recordings are in audio/jazz-noir/ (noir-01.mp3 ... noir-30.mp3), Jazz Noir plays them, shuffled and crossfaded, forever.
    With none there, it falls back to the generated sax band. */
-const NOIR_MAX=30,noirPath=i=>'audio/jazz-noir/noir-'+String(i+1).padStart(2,'0')+'.mp3';
+const NOIR_MAX=40,noirPath=i=>'audio/jazz-noir/noir-'+String(i+1).padStart(2,'0')+'.mp3';
 let noirRec=null,noirList=[],noirProbing=null,noirDecks=null,noirAct=0,noirQ=[],noirXf=false,noirNo=0;
 function noirProbe(){
   if(noirRec!==null)return Promise.resolve();
