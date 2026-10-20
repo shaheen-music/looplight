@@ -170,7 +170,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v56';
+const BUILD='looplight-v57';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -1899,7 +1899,7 @@ document.addEventListener('visibilitychange',()=>{if(playing&&document.visibilit
    If full recordings are in audio/jazz-noir/ (noir-01.mp3 ... noir-30.mp3), Jazz Noir plays them, shuffled and crossfaded, forever.
    With none there, it falls back to the generated sax band. */
 /* Silk & Bamboo plays recordings the same way (audio/silk-bamboo/s64-01.mp3 ...). The state below is always the current side's; it is parked and restored when the side changes. */
-const REC={noir:{dir:'audio/jazz-noir/noir-',max:40,mb:2.9,title:'Jazz Noir',meta:'Recorded jazz · tenor sax, piano, bass & brushes'},china:{dir:'audio/silk-bamboo/s64-',max:4,mb:14,title:'Silk & Bamboo',meta:'Recorded Chinese instrumental · guzheng, flute & erhu'}};
+const REC={noir:{dir:'audio/jazz-noir/noir-',max:40,mb:2.9,title:'Jazz Noir',meta:'Tenor sax, piano, bass & brushes'},china:{dir:'audio/silk-bamboo/s64-',max:4,mb:14,title:'Silk & Bamboo',meta:'Guzheng, flute & erhu'}};
 const recMode=()=>mode==='noir'||mode==='china';
 const NOIR_MAX=40,noirPath=i=>REC[mode].dir+String(i+1).padStart(2,'0')+'.mp3';
 let noirRec=null,noirList=[],noirProbing=null,noirDecks=null,noirAct=0,noirQ=[],noirXf=false,noirNo=0;
