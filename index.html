@@ -1317,7 +1317,7 @@ const SMP_CFG={
 let SMP=null,loadingBand=false,smpLoad={};
 function b64buf(b){const bin=atob(b),n=bin.length,u=new Uint8Array(n);for(let i=0;i<n;i++)u[i]=bin.charCodeAt(i);return u.buffer;}
 /* each side only decodes the recordings it plays: koto, shakuhachi and taiko for Japanese Classical, the saxophone for Jazz Noir */
-const smpWant=()=>(mode==='japan'?['koto','shaku','taiko']:mode==='noir'?['sax','saxp','saxk','saxb','piano','bass']:mode==='china'?['dtr','flute','erhu']:[]);
+const smpWant=()=>(mode==='japan'?['koto','shaku','taiko']:mode==='noir'?(noirRec?[]:['sax','saxp','saxk','saxb','piano','bass']):mode==='china'?['dtr','flute','erhu']:[]);
 const smpHas=i=>!!(SMP&&SMP[i]&&SMP[i].keys.length);
 const smpScript={};
 /* each instrument's recordings are their own small file, fetched the first time a side needs them (and kept for offline use) */
@@ -1353,6 +1353,7 @@ function loadSamples(){
   }));
 }
 function playSample(inst,t,midi,v,dur,dest,opt){
+  if(window.__PLAIN){opt={};if(window.__DRY)dest=ac.destination;}
   const set=SMP&&SMP[inst];if(!set||!set.keys.length)return;
   const cfg=SMP_CFG[inst],key=set.keys[nearIdx(set.keys,midi)],smp=set.map[key];
   const rate=Math.pow(2,(midi-key)/12),src=ac.createBufferSource();src.buffer=smp.buf;src.playbackRate.value=rate;
@@ -1362,19 +1363,19 @@ function playSample(inst,t,midi,v,dur,dest,opt){
   g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(peak,t+att);
   let end=t+hold;
   const isSax=inst.indexOf('sax')===0;
-  if(isSax&&hold>0.45){const pk2=peak*1.1;g.gain.linearRampToValueAtTime(pk2,t+hold*0.3);g.gain.linearRampToValueAtTime(peak*0.86,end);}
+  if(isSax&&hold>0.45&&!window.__PLAIN){const pk2=peak*1.1;g.gain.linearRampToValueAtTime(pk2,t+hold*0.3);g.gain.linearRampToValueAtTime(peak*0.86,end);}
   if(cfg.sus||(opt&&opt.cut)){
     g.gain.setValueAtTime(isSax&&hold>0.45?peak*0.86:peak,end);g.gain.linearRampToValueAtTime(0.0001,end+rel);end+=rel+0.04;
   }else end=t+smp.buf.duration/rate;
   end=Math.min(end,t+(smp.buf.duration-smp.on)/rate);
   const isSaxV=inst==='sax'||inst==='saxp';
-  if(isSaxV&&!S.lite&&hold>0.6&&!(opt&&opt.leg)){
+  if(isSaxV&&!S.lite&&hold>0.6&&!(opt&&opt.leg)&&!window.__PLAIN){
     /* a player's vibrato comes in late on a held note, slow and uneven */
     const l=ac.createOscillator();l.frequency.value=4.8+Math.random()*0.9;const lg=ac.createGain(),d0=Math.min(0.45,hold*0.4);
     lg.gain.setValueAtTime(0,t);lg.gain.setValueAtTime(0,t+d0);lg.gain.linearRampToValueAtTime(14+Math.random()*10,t+d0+0.6);
     l.connect(lg);lg.connect(src.detune);l.start(t);l.stop(end+0.05);
   }
-  if(isSaxV)src.detune.value=(Math.random()-0.5)*14;
+  if(isSaxV&&!window.__PLAIN)src.detune.value=(Math.random()-0.5)*14;
   if(cfg.vib&&!S.lite){
     const l=ac.createOscillator();l.frequency.value=4.6+Math.random()*0.4;const lg=ac.createGain();
     lg.gain.setValueAtTime(0,t);lg.gain.linearRampToValueAtTime(cfg.vib*(hold>0.8?1:0.3),t+Math.min(0.9,hold*0.8));
@@ -1567,8 +1568,8 @@ function scheduleNoirBar(T,t0,bar,sec,bi,e,st12,ending){
   /* the saxophone */
   mel.forEach(n=>{
     const t=st(n.s)+0.008+hum();
-    if(n.br&&!S.lite){if(smpHas('saxb'))playSmpNoise('saxb',Math.max(t0-0.05,t-0.3),0.9*n.v);else voiceBreath(Math.max(t0-0.05,t-0.24),n.v);}
-    if(n.gr&&!S.lite){if(smpHas('sax'))playSample('sax',t-0.1,n.m-1,n.v*0.5,0.1,bus);else voiceSax(t-0.11,mtof(n.m-1),0.12,n.v*0.7,{});}
+    if(n.br&&!S.lite&&!window.__PLAIN){if(smpHas('saxb'))playSmpNoise('saxb',Math.max(t0-0.05,t-0.3),0.9*n.v);else voiceBreath(Math.max(t0-0.05,t-0.24),n.v);}
+    if(n.gr&&!S.lite&&!window.__PLAIN){if(smpHas('sax'))playSample('sax',t-0.1,n.m-1,n.v*0.5,0.1,bus);else voiceSax(t-0.11,mtof(n.m-1),0.12,n.v*0.7,{});}
     const sd=Math.min(4.2,n.d*u*0.97+0.03);
     window.__sx=window.__sx||{samp:0,synth:0};
     if(smpHas('sax')){
@@ -1576,7 +1577,7 @@ function scheduleNoirBar(T,t0,bar,sec,bi,e,st12,ending){
       const leg=t-noirLast.t<0.14&&Math.abs(n.m-noirLast.m)<=9&&!n.sc;
       const sl=leg?clamp((noirLast.m-n.m)*100,-200,200)*0.6:0;
       playSample(n.v<0.62&&smpHas('saxp')?'saxp':'sax',t,n.m,n.v,sd,bus,{scoop:n.sc,fall:n.fl,leg:leg,sl:sl});
-      if(!leg&&!S.lite&&smpHas('saxk'))playSmpNoise('saxk',t+0.005,0.55*n.v);
+      if(!leg&&!S.lite&&!window.__PLAIN&&smpHas('saxk'))playSmpNoise('saxk',t+0.005,0.55*n.v);
       noirLast={t:t+sd,m:n.m};
     }
     else{window.__sx.synth++;voiceSax(t,mtof(n.m),Math.min(4,sd),n.v,{scoop:n.sc,fall:n.fl});}
@@ -1722,6 +1723,7 @@ function scheduleBar(t0){
     }
   }
 
+  if(T.mode==='noir'&&noirRec){uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
   if(T.mode==='noir'){scheduleNoirBar(T,t0,bar,sec,bi,e,st,ending);uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
   if(T.mode==='china'){scheduleChinaBar(T,t0,bar,sec,bi,e,st,ending);uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
   if(T.mode==='japan'){scheduleJapanBar(T,t0,bar,sec,bi,e,st,ending);uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
@@ -1794,18 +1796,75 @@ async function lockScreen(){try{if(navigator.wakeLock&&!wake){wake=await navigat
 function unlockScreen(){try{if(wake){wake.release();wake=null;}}catch(e){}}
 document.addEventListener('visibilitychange',()=>{if(playing&&document.visibilityState==='visible')lockScreen();});
 
+/* ===== Jazz Noir: real recordings =====
+   If full recordings are in audio/jazz-noir/ (noir-01.mp3 ... noir-30.mp3), Jazz Noir plays them, shuffled and crossfaded, forever.
+   With none there, it falls back to the generated sax band. */
+const NOIR_MAX=30,noirPath=i=>'audio/jazz-noir/noir-'+String(i+1).padStart(2,'0')+'.mp3';
+let noirRec=null,noirList=[],noirProbing=null,noirDecks=null,noirAct=0,noirQ=[],noirXf=false,noirNo=0;
+function noirProbe(){
+  if(noirRec!==null)return Promise.resolve();
+  if(noirProbing)return noirProbing;
+  return noirProbing=Promise.all(Array.from({length:NOIR_MAX},(_,i)=>fetch(noirPath(i),{method:'HEAD',cache:'no-cache'}).then(r=>{const ct=r.headers.get('content-type')||'';return r.ok&&ct.indexOf('text/html')<0?i:-1;}).catch(()=>-1)))
+    .then(a=>{noirList=a.filter(i=>i>=0);noirRec=noirList.length>0;noirProbing=null;});
+}
+function noirNext(){
+  if(!noirQ.length){noirQ=noirList.slice().sort(()=>Math.random()-0.5);const last=noirDecks&&noirDecks[noirAct].idx;if(noirQ.length>1&&noirQ[0]===last)noirQ.push(noirQ.shift());}
+  return noirQ.shift();
+}
+function noirSetup(){
+  if(noirDecks||!ac)return;
+  noirDecks=[0,1].map(()=>{const el=new Audio();el.preload='auto';el.crossOrigin='anonymous';const g=ac.createGain();g.gain.value=0;ac.createMediaElementSource(el).connect(g);g.connect(master);return {el:el,g:g,idx:-1};});
+  noirDecks.forEach((d,i)=>{
+    d.el.addEventListener('timeupdate',()=>{if(i===noirAct&&!noirXf&&playing&&isFinite(d.el.duration)&&d.el.duration-d.el.currentTime<4)noirCross();});
+    d.el.addEventListener('ended',()=>{if(i===noirAct&&!noirXf&&playing)noirAdvance();});
+    d.el.addEventListener('error',()=>{if(i===noirAct&&playing&&d.idx>=0){noirList=noirList.filter(x=>x!==d.idx);noirQ=noirQ.filter(x=>x!==d.idx);d.idx=-1;if(noirList.length)noirAdvance();else{noirRec=false;nextNow();}}});
+  });
+}
+function noirUi(){if(mode!=='noir'||!noirRec)return;const d=noirDecks&&noirDecks[noirAct];$('title').textContent='Jazz Noir'+(d&&d.idx>=0?' · take '+(d.idx+1):'');$('meta').textContent='Recorded jazz · tenor sax, piano, bass & brushes';$('codeTxt').textContent='recording';}
+function noirLoad(d){const i=noirNext();d.idx=i;d.el.src=noirPath(i);d.el.load();}
+function noirStart(){
+  if(mode!=='noir'||!noirRec||!playing)return;
+  noirSetup();if(!noirDecks)return;
+  const d=noirDecks[noirAct],n=ac.currentTime;
+  if(d.idx<0)noirLoad(d);
+  d.el.play().then(()=>{d.g.gain.cancelScheduledValues(n);d.g.gain.setValueAtTime(d.g.gain.value,n);d.g.gain.linearRampToValueAtTime(0.75,n+0.7);noirUi();noirPrep();}).catch(()=>{});
+}
+function noirPrep(){const o=noirDecks[1-noirAct];if(o.idx<0)noirLoad(o);}
+function noirCross(){
+  const cur=noirDecks[noirAct],nx=noirDecks[1-noirAct];if(nx.idx<0)noirLoad(nx);
+  noirXf=true;const n=ac.currentTime,f=Math.min(3.5,Math.max(1,cur.el.duration-cur.el.currentTime));
+  nx.el.currentTime=0;
+  nx.el.play().then(()=>{
+    nx.g.gain.cancelScheduledValues(n);nx.g.gain.setValueAtTime(0,n);nx.g.gain.linearRampToValueAtTime(0.75,n+f);
+    cur.g.gain.cancelScheduledValues(n);cur.g.gain.setValueAtTime(cur.g.gain.value,n);cur.g.gain.linearRampToValueAtTime(0,n+f);
+    setTimeout(()=>{cur.el.pause();cur.idx=-1;noirAct=1-noirAct;noirXf=false;noirUi();noirLoad(cur);},f*1000+100);
+  }).catch(()=>{noirXf=false;});
+}
+function noirAdvance(){
+  if(!noirDecks||!noirRec)return;
+  const cur=noirDecks[noirAct],nx=noirDecks[1-noirAct],n=ac.currentTime;
+  if(nx.idx<0)noirLoad(nx);
+  cur.g.gain.cancelScheduledValues(n);cur.g.gain.setTargetAtTime(0,n,0.15);
+  setTimeout(()=>{try{cur.el.pause();}catch(e){}cur.idx=-1;},700);
+  noirAct=1-noirAct;noirXf=false;
+  nx.el.currentTime=0;nx.el.play().then(()=>{nx.g.gain.cancelScheduledValues(ac.currentTime);nx.g.gain.setValueAtTime(0,ac.currentTime);nx.g.gain.linearRampToValueAtTime(0.75,ac.currentTime+0.8);noirUi();setTimeout(()=>{noirLoad(cur);},800);}).catch(()=>{});
+}
+function noirStop(){if(!noirDecks)return;noirDecks.forEach(d=>{try{d.el.pause();}catch(e){}});noirXf=false;}
+function noirEnter(){noirProbe().then(()=>{if(noirRec&&playing&&mode==='noir')noirStart();else if(noirRec===false&&mode==='noir'){shown=null;nextNow();}});}
 function start(){
   if(!initAudio())return;
+  if(mode==='noir'&&noirRec===null){noirProbe().then(start);return;}
   if(!smpReady()){loadingBand=true;renderStatus();loadSamples().then(()=>{loadingBand=false;renderStatus();start();});return;}
   if(!started){started=true;barNum=0;barCount=0;nextBarTime=ac.currentTime+0.15;startTicker();}
   clearTimeout(suspendT);
   try{const now=ac.currentTime;holdGain(outVol.gain,now);outVol.gain.setValueAtTime(Math.max(outVol.gain.value,0.0001),now);if(sleepFading&&sleepTick)sleepFade();else outVol.gain.setTargetAtTime(volGain(),now+0.02,0.04);}catch(e){}
   applyLite();
   playing=true;applyTexture();lockScreen();keepAlive(true);renderStatus();renderPlayBtn();
+  if(mode==='noir'&&noirRec)noirStart();
 }
 let suspendT=null;
 function pause(){
-  playing=false;unlockScreen();keepAlive(false);
+  playing=false;unlockScreen();keepAlive(false);noirStop();
   /* fade out first, then suspend, so stopping never cuts the signal mid-wave */
   try{const now=ac.currentTime;holdGain(outVol.gain,now);outVol.gain.setTargetAtTime(0,now,0.025);}catch(e){}
   clearTimeout(suspendT);
@@ -1868,6 +1927,8 @@ function initMediaSession(){
   set('nexttrack',()=>{nextNow();});
 }
 function nextNow(){
+  if(mode==='noir'&&noirRec===null&&ac){noirProbe().then(nextNow);return;}
+  if(mode==='noir'&&noirRec&&started&&playing&&noirDecks){noirAdvance();return;}
   if(ac&&!smpReady()){loadingBand=true;renderStatus();loadSamples().then(()=>{loadingBand=false;renderStatus();nextNow();});return;}
   const fresh=nextTune||compose(tune.keyPc,null,mode);nextTune=null;
   if(!started||!ac){tune=fresh;barNum=0;shown=null;renderTune(tune,0);return;}
@@ -1915,6 +1976,7 @@ function switchModeCore(m){
   if(ac){toneLP.frequency.setTargetAtTime(cfg.tone,ac.currentTime,0.3);mainBus.gain.setTargetAtTime(0.9*cfg.trim,ac.currentTime,0.3);drumMain.gain.setTargetAtTime(0.9*cfg.trim,ac.currentTime,0.3);}
   flies.length=0;
   if(ac){applyLite();applyTexture();}
+  if(m==='noir'){if(playing)noirEnter();}else noirStop();
   saveSettings();renderAmbVols();
 }
 function setMode(m){if(m===mode)return;switchModeCore(m);nextNow();}
@@ -1996,6 +2058,7 @@ function renderTune(T,bar){
     $('codeTxt').textContent=T.code;
     $('meta').textContent=NOTE[T.keyPc]+' '+(T.mode==='china'?(CNAMES[T.scaleName]+' · '+T.bpm+' BPM · Guzheng, bamboo flute & erhu'):T.mode==='japan'?(JNAMES[T.scaleName]+' · '+T.bpm+' BPM · '+(T.style==='sham'?'Shamisen, koto & shakuhachi':'Koto & shakuhachi')):T.mode==='noir'?(T.minor?'minor':'major')+' · '+T.bpm+' BPM · Tenor sax & piano · '+(smpHas('sax')?'recorded sax ':'SYNTH FALLBACK ')+BUILD.replace('looplight-',''):(T.minor?'minor':'major')+' · '+T.bpm+' BPM · '+Math.round(T.swing*100)+'% swing');
   }
+  noirUi();
   $('eyebrow').textContent=started?'Now playing':'Up first';
   renderBar(bar);
   lastBar=bar;updateMediaPosition(bar);
@@ -2265,7 +2328,7 @@ window.__cozy={ps:(...a)=>playSample(...a),getBus:()=>mainBus,init:()=>{initAudi
 })();
 
 /* installable app: the page is fetched fresh whenever you are online and kept for offline use */
-const BUILD='looplight-v32';
+const BUILD='looplight-v33';
 function showUpdateNotice(){
   if(document.getElementById('updNote'))return;
   const d=document.createElement('div');d.id='updNote';d.className='updnote';d.setAttribute('role','status');
