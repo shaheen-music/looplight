@@ -202,7 +202,7 @@ const MODES={
     adj:['Misty','Jade','Spring','Lotus','Distant','Silken','Morning','Quiet','Golden','Orchid','Winding','Moonlit'],
     noun:['Pavilion','River','Lotus Pond','Bamboo Grove','West Lake','Mountain Path','Lantern','Teahouse','Willow','Stone Bridge','Plum Blossom','Dawn']},
   noir:{title:'Jazz Noir',tagline:'Tenor sax · piano · a smoky late-night room',flipTo:'Flip to Cozy',bpm:[64,74],swing:[0.33,0.33],minorP:0.55,
-    voices:['sax'],trim:1.1,reverb:0.55,tone:4000,whoosh:false,hatFrom:99,kickFrom:99,hatMul:1,kickV:1,snare:false,ghost:false,bassDur:[2,2],
+    voices:['sax'],trim:1.5,reverb:0.34,tone:5400,whoosh:false,hatFrom:99,kickFrom:99,hatMul:1,kickV:1,snare:false,ghost:false,bassDur:[2,2],
     plan:['Intro','Head','Head 2','Bridge','Bridge 2','Return','Solo','Outro'],
     adj:['Smoky','Midnight','Velvet','Blue','Lonely','Last','Rainy','Slow','Amber','Hushed','Neon','Faded'],
     noun:['Lounge','Alley','Corner','Cigar','Window','Boulevard','Platform','Hotel','Streetlight','Stairwell','Taxi','Last Call']}
@@ -839,7 +839,7 @@ function initAudio(){
     const ws=ac.createWaveShaper();const curve=new Float32Array(2049);
     for(let i=0;i<curve.length;i++){const x=i*2/(curve.length-1)-1,a=Math.abs(x),y=a<=0.8?a:0.8+0.2*Math.tanh((a-0.8)/0.2);curve[i]=x<0?-y:y;}
     ws.curve=curve;ws.oversample='none';
-    const hp=ac.createBiquadFilter();hp.type='highpass';hp.frequency.value=S.bass?60:150;hp.Q.value=0.6;hpNode=hp;
+    const hp=ac.createBiquadFilter();hp.type='highpass';hp.frequency.value=hpFreq();hp.Q.value=0.6;hpNode=hp;
     master.connect(hp);hp.connect(toneLP);toneLP.connect(comp);comp.connect(makeup);makeup.connect(lim);lim.connect(ws);if(window.__COZY_TAP){window.__preAn=ac.createAnalyser();window.__preAn.fftSize=2048;lim.connect(window.__preAn);}outVol=ac.createGain();outVol.gain.value=volGain();ws.connect(outVol);outVol.connect(ac.destination);
     /* ambience gets its own path (after the compressor and tone filter) so rain keeps its top end and never pumps the music */
     ambBus=ac.createGain();ambBus.gain.value=INTERNAL;ambBus.connect(ws);
@@ -1153,10 +1153,15 @@ function loopNoise(freq,q,lpFreq,gain){
   src.connect(bp);bp.connect(lp);lp.connect(g);g.connect(master);src.start();
   return {src:src,g:g};
 }
-function applyBass(){if(hpNode&&ac)hpNode.frequency.setTargetAtTime(S.bass?60:150,ac.currentTime,0.1);}
+/* the sax and piano keep their warm low body: Jazz Noir lets the low end through and compresses and echoes less than the other sides */
+const hpFreq=()=>mode==='noir'?(S.bass?55:70):(S.bass?60:150);
+function applyChain(){if(!ac||!comp_)return;const n=ac.currentTime,j=mode==='noir';
+  if(hpNode)hpNode.frequency.setTargetAtTime(hpFreq(),n,0.1);
+  comp_.ratio.setTargetAtTime(j?1.7:3,n,0.1);comp_.threshold.setTargetAtTime(j?-18:-24,n,0.1);}
+function applyBass(){applyChain();}
 function applyLite(){
   if(!ac)return;const now=ac.currentTime;
-  sendNodes.r.gain.setTargetAtTime(S.lite?0:MODES[mode].reverb,now,0.15);sendNodes.d.gain.setTargetAtTime(S.lite?0:0.12,now,0.15);
+  sendNodes.r.gain.setTargetAtTime(S.lite?0:MODES[mode].reverb,now,0.15);sendNodes.d.gain.setTargetAtTime(S.lite?0:(mode==='noir'?0.04:0.12),now,0.15);applyChain();
 }
 function applyTexture(){
   if(!ac)return;
@@ -2251,7 +2256,7 @@ window.__cozy={smp:()=>smpReady()?2:0,reduction:()=>({comp:comp_&&comp_.reductio
 })();
 
 /* installable app: the page is fetched fresh whenever you are online and kept for offline use */
-const BUILD='looplight-v30';
+const BUILD='looplight-v31';
 function showUpdateNotice(){
   if(document.getElementById('updNote'))return;
   const d=document.createElement('div');d.id='updNote';d.className='updnote';d.setAttribute('role','status');
