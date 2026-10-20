@@ -170,7 +170,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v52';
+const BUILD='looplight-v53';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -1375,7 +1375,7 @@ const SMP_CFG={
 let SMP=null,loadingBand=false,smpLoad={};
 function b64buf(b){const bin=atob(b),n=bin.length,u=new Uint8Array(n);for(let i=0;i<n;i++)u[i]=bin.charCodeAt(i);return u.buffer;}
 /* each side only decodes the recordings it plays: koto, shakuhachi and taiko for Japanese Classical, the saxophone for Jazz Noir */
-const smpWant=()=>(mode==='japan'?['koto','shaku','taiko']:mode==='noir'?(noirRec?[]:['sax','saxp','saxk','saxb','piano','bass']):mode==='china'?['dtr','flute','erhu']:[]);
+const smpWant=()=>(mode==='japan'?['koto','shaku','taiko']:mode==='noir'?(noirRec?[]:['sax','saxp','saxk','saxb','piano','bass']):mode==='china'?(noirRec?[]:['dtr','flute','erhu']):[]);
 const smpHas=i=>!!(SMP&&SMP[i]&&SMP[i].keys.length);
 const smpScript={};
 /* each instrument's recordings are their own small file, fetched the first time a side needs them (and kept for offline use) */
@@ -1822,7 +1822,7 @@ function scheduleBar(t0){
     }
   }
 
-  if(T.mode==='noir'&&noirRec){uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
+  if((T.mode==='noir'||T.mode==='china')&&noirRec){uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
   if(T.mode==='noir'){scheduleNoirBar(T,t0,bar,sec,bi,e,st,ending);uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
   if(T.mode==='china'){scheduleChinaBar(T,t0,bar,sec,bi,e,st,ending);uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
   if(T.mode==='japan'){scheduleJapanBar(T,t0,bar,sec,bi,e,st,ending);uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
@@ -1898,13 +1898,24 @@ document.addEventListener('visibilitychange',()=>{if(playing&&document.visibilit
 /* ===== Jazz Noir: real recordings =====
    If full recordings are in audio/jazz-noir/ (noir-01.mp3 ... noir-30.mp3), Jazz Noir plays them, shuffled and crossfaded, forever.
    With none there, it falls back to the generated sax band. */
-const NOIR_MAX=40,noirPath=i=>'audio/jazz-noir/noir-'+String(i+1).padStart(2,'0')+'.mp3';
+/* Silk & Bamboo plays recordings the same way (audio/silk-bamboo/silk-01.mp3 ...). The state below is always the current side's; it is parked and restored when the side changes. */
+const REC={noir:{dir:'audio/jazz-noir/noir-',max:40,mb:2.9,title:'Jazz Noir',meta:'Recorded jazz · tenor sax, piano, bass & brushes'},china:{dir:'audio/silk-bamboo/silk-',max:4,mb:21,title:'Silk & Bamboo',meta:'Recorded Chinese instrumental · guzheng, flute & erhu'}};
+const recMode=()=>mode==='noir'||mode==='china';
+const NOIR_MAX=40,noirPath=i=>REC[mode].dir+String(i+1).padStart(2,'0')+'.mp3';
 let noirRec=null,noirList=[],noirProbing=null,noirDecks=null,noirAct=0,noirQ=[],noirXf=false,noirNo=0;
+const recParked={};
+function recSwap(from,to){
+  if(from===to)return;
+  if(REC[from])recParked[from]={rec:noirRec,list:noirList,q:noirQ};
+  const p=recParked[to]||{rec:null,list:[],q:[]};noirRec=p.rec;noirList=p.list;noirQ=p.q;noirProbing=null;
+  if(noirDecks){noirDecks.forEach(d=>{try{d.el.pause();}catch(e){}d.idx=-1;d.el.removeAttribute('src');try{d.el.load();}catch(e){}d.g.gain.cancelScheduledValues(0);d.g.gain.value=0;});noirAct=0;noirXf=false;}
+}
 function noirProbe(){
   if(noirRec!==null)return Promise.resolve();
   if(noirProbing)return noirProbing;
-  return noirProbing=Promise.all(Array.from({length:NOIR_MAX},(_,i)=>caches.match(noirPath(i)).then(h=>h?i:fetch(noirPath(i),{method:'HEAD',cache:'no-cache'}).then(r=>{const ct=r.headers.get('content-type')||'';return r.ok&&ct.indexOf('text/html')<0?i:-1;})).catch(()=>-1)))
-    .then(a=>{noirList=a.filter(i=>i>=0);noirRec=noirList.length>0;noirProbing=null;});
+  const pm=mode;
+  return noirProbing=Promise.all(Array.from({length:REC[mode].max},(_,i)=>caches.match(noirPath(i)).then(h=>h?i:fetch(noirPath(i),{method:'HEAD',cache:'no-cache'}).then(r=>{const ct=r.headers.get('content-type')||'';return r.ok&&ct.indexOf('text/html')<0?i:-1;})).catch(()=>-1)))
+    .then(a=>{if(mode!==pm)return;noirList=a.filter(i=>i>=0);noirRec=noirList.length>0;noirProbing=null;});
 }
 /* smooth equal-power fades, so two tracks crossing never dip or bump in loudness */
 function noirFade(g,from,to,t,dur){
@@ -1913,15 +1924,16 @@ function noirFade(g,from,to,t,dur){
 }
 /* offline: tracks are saved on this phone in a cache the service worker plays from */
 const NOIR_CACHE='looplight-audio';
-async function noirSavedCount(){try{const c=await caches.open(NOIR_CACHE);return (await c.keys()).length;}catch(e){return 0;}}
+async function noirSavedCount(){try{const c=await caches.open(NOIR_CACHE);return (await c.keys()).filter(r=>r.url.indexOf('/'+REC[mode].dir)>=0).length;}catch(e){return 0;}}
 let noirSaving=false;
 async function noirOffUi(){
   const b=$('noirOff');if(!b)return;
-  b.classList.toggle('on',mode==='noir'&&!!noirRec&&'caches' in window);
+  b.classList.toggle('on',recMode()&&!!noirRec&&'caches' in window);
+  if(!recMode())return;
   if(noirSaving)return;
   const n=await noirSavedCount(),tot=noirList.length;
   if(n>=tot&&tot>0){b.textContent='Saved offline \u2713';b.disabled=true;}
-  else{b.textContent='Save offline'+(n?' ('+n+'/'+tot+')':' (~'+Math.round(noirList.length*2.9)+' MB)');b.disabled=false;}
+  else{b.textContent='Save offline'+(n?' ('+n+'/'+tot+')':' (~'+Math.round(noirList.length*REC[mode].mb)+' MB)');b.disabled=false;}
 }
 async function noirSaveAll(){
   if(noirSaving)return;noirSaving=true;const b=$('noirOff');b.disabled=true;
@@ -1951,10 +1963,13 @@ const NOIR_NAMES=(()=>{const adj=['Velvet','Smoky','Midnight','Amber','Blue','La
   const out=[],used=new Set(),r=mulberry(20261020);
   for(let i=0;i<NOIR_MAX;i++){let n,k=0;do{n=adj[Math.floor(r()*adj.length)]+' '+noun[Math.floor(r()*noun.length)];k++;}while(used.has(n)&&k<50);used.add(n);out.push(n);}
   return out;})();
-function noirUi(){noirBarShown=-1;noirOffUi();$('codeBtn').parentElement.style.display=(mode==='noir'&&noirRec)?'none':'';if(mode!=='noir'||!noirRec)return;const d=noirDecks&&noirDecks[noirAct];$('title').textContent=d&&d.idx>=0?NOIR_NAMES[d.idx]:'Jazz Noir';$('meta').textContent='Recorded jazz · tenor sax, piano, bass & brushes';$('codeTxt').textContent='recording';}
+const CHINA_NAMES=(()=>{const adj=MODES.china.adj,noun=MODES.china.noun,out=[],used=new Set(),r=mulberry(20261021);
+  for(let i=0;i<REC.china.max;i++){let n,k=0;do{n=adj[Math.floor(r()*adj.length)]+' '+noun[Math.floor(r()*noun.length)];k++;}while(used.has(n)&&k<50);used.add(n);out.push(n);}
+  return out;})();
+function noirUi(){noirBarShown=-1;noirOffUi();$('codeBtn').parentElement.style.display=(recMode()&&noirRec)?'none':'';if(!recMode()||!noirRec)return;const d=noirDecks&&noirDecks[noirAct],nm=mode==='china'?CHINA_NAMES:NOIR_NAMES;$('title').textContent=d&&d.idx>=0?nm[d.idx]:REC[mode].title;$('meta').textContent=REC[mode].meta;$('codeTxt').textContent='recording';}
 function noirLoad(d){const i=noirNext();d.idx=i;d.el.src=noirPath(i);d.el.load();}
 function noirStart(){
-  if(mode!=='noir'||!noirRec||!playing)return;
+  if(!recMode()||!noirRec||!playing)return;
   noirSetup();if(!noirDecks)return;
   const d=noirDecks[noirAct],n=ac.currentTime;
   if(d.idx<0)noirLoad(d);
@@ -1980,17 +1995,17 @@ function noirAdvance(){
   nx.el.currentTime=0;nx.el.play().then(()=>{noirFade(nx.g.gain,0,0.9,ac.currentTime,1.6);noirUi();setTimeout(()=>{noirLoad(cur);},1900);}).catch(()=>{});
 }
 function noirStop(){if(!noirDecks)return;noirDecks.forEach(d=>{try{d.el.pause();}catch(e){}});noirXf=false;}
-function noirEnter(){noirProbe().then(()=>{if(noirRec&&playing&&mode==='noir')noirStart();else if(noirRec===false&&mode==='noir'){shown=null;nextNow();}});}
+function noirEnter(){noirProbe().then(()=>{if(noirRec&&playing&&recMode())noirStart();else if(noirRec===false&&recMode()){shown=null;nextNow();}});}
 function start(){
   if(!initAudio())return;
-  if(mode==='noir'&&noirRec===null){noirProbe().then(start);return;}
+  if(recMode()&&noirRec===null){noirProbe().then(start);return;}
   if(!smpReady()){loadingBand=true;renderStatus();loadSamples().then(()=>{loadingBand=false;renderStatus();start();});return;}
   if(!started){started=true;barNum=0;barCount=0;nextBarTime=ac.currentTime+0.15;startTicker();}
   clearTimeout(suspendT);
   try{const now=ac.currentTime;holdGain(outVol.gain,now);outVol.gain.setValueAtTime(Math.max(outVol.gain.value,0.0001),now);if(sleepFading&&sleepTick)sleepFade();else outVol.gain.setTargetAtTime(volGain(),now+0.02,0.04);}catch(e){}
   applyLite();
   playing=true;applyTexture();lockScreen();keepAlive(true);renderStatus();renderPlayBtn();
-  if(mode==='noir'&&noirRec)noirStart();
+  if(recMode()&&noirRec)noirStart();
 }
 let suspendT=null;
 function pause(){
@@ -2057,8 +2072,8 @@ function initMediaSession(){
   set('nexttrack',()=>{nextNow();});
 }
 function nextNow(){
-  if(mode==='noir'&&noirRec===null&&ac){noirProbe().then(nextNow);return;}
-  if(mode==='noir'&&noirRec&&started&&playing&&noirDecks){noirAdvance();return;}
+  if(recMode()&&noirRec===null&&ac){noirProbe().then(nextNow);return;}
+  if(recMode()&&noirRec&&started&&playing&&noirDecks){noirAdvance();return;}
   if(ac&&!smpReady()){loadingBand=true;renderStatus();loadSamples().then(()=>{loadingBand=false;renderStatus();nextNow();});return;}
   const fresh=nextTune||compose(tune.keyPc,null,mode);nextTune=null;
   if(!started||!ac){tune=fresh;barNum=0;shown=null;renderTune(tune,0);return;}
@@ -2099,6 +2114,7 @@ function renderFlips(){
   });
 }
 function switchModeCore(m){
+  recSwap(mode,m);
   mode=m;nextTune=null;const cfg=MODES[m];
   document.documentElement.dataset.mode=m;
   $('appName').textContent='Looplight';$('tagline').textContent=FLIP_NAME[mode]+' · '+cfg.tagline;renderFlips();
@@ -2106,7 +2122,7 @@ function switchModeCore(m){
   if(ac){toneLP.frequency.setTargetAtTime(cfg.tone,ac.currentTime,0.3);mainBus.gain.setTargetAtTime(0.9*cfg.trim,ac.currentTime,0.3);drumMain.gain.setTargetAtTime(0.9*cfg.trim,ac.currentTime,0.3);}
   flies.length=0;
   if(ac){applyLite();applyTexture();}
-  if(m==='noir'){if(playing)noirEnter();}else noirStop();
+  if(REC[m]){if(playing)noirEnter();}else noirStop();
   saveSettings();renderAmbVols();
 }
 function setMode(m){if(m===mode||MODE_ORDER.indexOf(m)<0)return;switchModeCore(m);nextNow();}
@@ -2196,7 +2212,7 @@ function renderTune(T,bar){
 function renderBar(bar){
   tickEls.forEach((t,i)=>{t.className='tick'+(i<bar?' past':i===bar?' now':'');});
   secEls.forEach((s,i)=>s.classList.toggle('on',i===(bar>>2)));
-  $('upnext').innerHTML=(mode==='noir'&&noirRec)?'':nextTune?(S.auto?'Up next: <span>'+nextTune.name+'</span>':''):'';
+  $('upnext').innerHTML=(recMode()&&noirRec)?'':nextTune?(S.auto?'Up next: <span>'+nextTune.name+'</span>':''):'';
 }
 playBtn.addEventListener('click',toggle);
 $('next').addEventListener('click',nextNow);
@@ -2268,10 +2284,10 @@ function processQueue(){
     const e=uiQ.shift();
     if(e.k==='kick')pulse=1;
     else if(e.k==='note')spawnFly(e.m);
-    else if(e.k==='bar'){if(!(mode==='noir'&&noirRec))renderTune(e.tune,e.bar);}
+    else if(e.k==='bar'){if(!(recMode()&&noirRec))renderTune(e.tune,e.bar);}
   }
   /* a recording: the 32 bars (Head to Outro) are spread across the track, so the last one lights as the track ends */
-  if(mode==='noir'&&noirRec&&noirDecks){
+  if(recMode()&&noirRec&&noirDecks){
     const d=noirDecks[0].g.gain.value>=noirDecks[1].g.gain.value?noirDecks[0]:noirDecks[1],dur=d.el.duration;
     if(isFinite(dur)&&dur>1){const b=clamp(Math.floor(32*d.el.currentTime/dur),0,31);if(b!==noirBarShown){noirBarShown=b;renderBar(b);}}
   }

@@ -1,6 +1,6 @@
 # Looplight
 
-Endless music in four moods: Cozy, Sunny Side, Jazz Noir and Silk & Bamboo (a fifth, Japanese Classical with Tsugaru shamisen and taiko, is switched off for now). Cozy, Sunny Side and Silk & Bamboo are generated as you listen; Jazz Noir plays recordings. One page, no build step, works offline once opened.
+Endless music in four moods: Cozy, Sunny Side, Jazz Noir and Silk & Bamboo (a fifth, Japanese Classical with Tsugaru shamisen and taiko, is switched off for now). Cozy and Sunny Side are generated as you listen; Jazz Noir and Silk & Bamboo play recordings (Silk & Bamboo falls back to its generated guzheng, flute and erhu if the recordings are missing). One page, no build step, works offline once opened.
 
 Open it here: https://shaheen-music.github.io/looplight/
 
