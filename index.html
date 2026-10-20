@@ -170,7 +170,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v48';
+const BUILD='looplight-v49';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -1477,6 +1477,12 @@ function scheduleTsugaruBar(T,t0,bar,sec,bi,e,st,ending){
         o.connect(og);og.connect(bus);o.start(t);o.stop(t+0.6);
       }
       uiQ.push({t:t,k:'note',m:top});
+      // second voice: shakuhachi sings the longer notes, koto doubles the main beats an octave up
+      if(!S.lite&&sec>=1){
+        const beatsLen=n[1]/96,lastSh=T._lsh||-9;
+        if(beatsLen>=0.9&&g-lastSh>=96&&smpHas('shaku')){T._lsh=g;const sm=top>=68?top-12:top;playSample('shaku',t+0.02,sm,(sec===7?0.35:0.5)*quiet,Math.min(3,nd),bus);}
+        else if(strong&&!soft&&sec>=2&&n[1]>=48&&smpHas('koto')&&(g/96)%2===0)playSample('koto',t+0.01,Math.min(top+12,84),0.42*quiet,1.4,bus);
+      }
     });
   }
 }
