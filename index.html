@@ -170,7 +170,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v45';
+const BUILD='looplight-v46';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -196,7 +196,7 @@ const MODES={
     plan:['Intro','Morning','Morning 2','Break','Break 2','Return','Variation','Outro'],
     adj:['Sunny','Bright','Breezy','Honey','Easy','Golden','Lemon','Cheerful','Light','Fresh','Little','Merry'],
     noun:['Porch','Cafe','Garden','Bakery','Balcony','Picnic','Meadow','Walk','Windowsill','Breakfast','Orchard','Afternoon']},
-  japan:{title:'Japanese Classical',tagline:'Koto · shakuhachi · a quiet garden',flipTo:'Flip to Cozy',bpm:[46,58],swing:[0,0],minorP:0,
+  japan:{title:'Japanese Classical',tagline:'Tsugaru shamisen · taiko · a quiet garden',flipTo:'Flip to Cozy',bpm:[46,58],swing:[0,0],minorP:0,
     voices:['koto'],trim:3.6,reverb:0.8,tone:3000,whoosh:false,hatFrom:99,kickFrom:99,hatMul:1,kickV:1,snare:false,ghost:false,bassDur:[2,2],
     plan:['Jo','Ha','Ha 2','Kyu','Kyu 2','Return','Variation','Coda'],
     adj:['Quiet','Autumn','Moonlit','Misty','Silent','Distant','Willow','Winter','Morning','Gentle','Falling','Stone'],
@@ -397,7 +397,7 @@ function tsuPhrase(pool,keyPc,busy,home,motif){
   return {bars:bars,motif:m};
 }
 function composeJapan(prevPc,fixed,seed){
-  const style=fixed?(fixed.style||'koto'):(window.__JSTYLE||((x=>x<0.4?'tsu':x<0.75?'sham':'koto')(Math.random())));
+  const style=fixed?(fixed.style||'koto'):(window.__JSTYLE||'tsu');
   const cfg=MODES.japan;
   const scaleName=style==='tsu'?pick(['minyo','minyo','hirajoshi']):pick(['in','in','hirajoshi','hirajoshi','iwato','yo']),sc=JSCALES[scaleName];
   let ki=rnd(7);
@@ -412,7 +412,7 @@ function composeJapan(prevPc,fixed,seed){
     kpool:kpool,idx0:idx0,progA:JPROG[ia],progB:JPROG[ib],kintro:pick(KP_INTRO),kpat:pick(KP_SOFT),kbusy:pick(KP_BUSY),bus:null,dbus:null
   };
   if(style==='tsu'){
-    T.bpm=124+rnd(24);
+    T.bpm=117+rnd(23);
     const ta=tsuPhrase(mpool,keyPc,false,false,null);
     const ta2=tsuPhrase(mpool,keyPc,false,true,{cells:[ta.motif.cells[0],ta.motif.cells[1]],start:ta.motif.start});
     const tb=tsuPhrase(mpool,keyPc,true,false,null);
