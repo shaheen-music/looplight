@@ -169,7 +169,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v37';
+const BUILD='looplight-v38';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -1862,7 +1862,7 @@ function noirStart(){
   noirSetup();if(!noirDecks)return;
   const d=noirDecks[noirAct],n=ac.currentTime;
   if(d.idx<0)noirLoad(d);
-  d.el.play().then(()=>{noirFade(d.g.gain,Math.min(d.g.gain.value,0.75),0.75,n,d.g.gain.value>0.1?0.3:2.2);noirUi();noirPrep();}).catch(()=>{});
+  d.el.play().then(()=>{noirFade(d.g.gain,Math.min(d.g.gain.value,0.86),0.86,n,d.g.gain.value>0.1?0.3:2.2);noirUi();noirPrep();}).catch(()=>{});
 }
 function noirPrep(){const o=noirDecks[1-noirAct];if(o.idx<0)noirLoad(o);}
 function noirCross(){
@@ -1870,7 +1870,7 @@ function noirCross(){
   noirXf=true;const n=ac.currentTime,f=Math.min(5,Math.max(1.2,cur.el.duration-cur.el.currentTime-0.2));
   nx.el.currentTime=0;
   nx.el.play().then(()=>{
-    noirFade(nx.g.gain,0,0.75,n,f);noirFade(cur.g.gain,Math.max(0.01,cur.g.gain.value),0,n,f);
+    noirFade(nx.g.gain,0,0.86,n,f);noirFade(cur.g.gain,Math.max(0.01,cur.g.gain.value),0,n,f);
     setTimeout(()=>{cur.el.pause();cur.idx=-1;noirAct=1-noirAct;noirXf=false;noirUi();noirLoad(cur);},f*1000+100);
   }).catch(()=>{noirXf=false;});
 }
@@ -1881,7 +1881,7 @@ function noirAdvance(){
   noirFade(cur.g.gain,Math.max(0.01,cur.g.gain.value),0,n,1.6);
   setTimeout(()=>{try{cur.el.pause();}catch(e){}cur.idx=-1;},1800);
   noirAct=1-noirAct;noirXf=false;
-  nx.el.currentTime=0;nx.el.play().then(()=>{noirFade(nx.g.gain,0,0.75,ac.currentTime,1.6);noirUi();setTimeout(()=>{noirLoad(cur);},1900);}).catch(()=>{});
+  nx.el.currentTime=0;nx.el.play().then(()=>{noirFade(nx.g.gain,0,0.86,ac.currentTime,1.6);noirUi();setTimeout(()=>{noirLoad(cur);},1900);}).catch(()=>{});
 }
 function noirStop(){if(!noirDecks)return;noirDecks.forEach(d=>{try{d.el.pause();}catch(e){}});noirXf=false;}
 function noirEnter(){noirProbe().then(()=>{if(noirRec&&playing&&mode==='noir')noirStart();else if(noirRec===false&&mode==='noir'){shown=null;nextNow();}});}
