@@ -117,7 +117,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 
 <main class="wrap">
   <header class="top">
-    <div class="titlebox"><h1 id="appName">Looplight</h1><p class="tagline" id="tagline">Cozy · wind down, relax, sleep</p></div>
+    <div class="titlebox"><h1 id="appName">Looplight</h1><p class="tagline" id="tagline">Cozy</p></div>
     <div class="topright"><p class="status" id="status">Ready</p><span class="flips" id="flips"></span></div>
   </header>
 
@@ -170,7 +170,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v55';
+const BUILD='looplight-v56';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -1953,7 +1953,8 @@ function noirSetup(){
   if(noirDecks||!ac)return;
   noirDecks=[0,1].map(()=>{const el=new Audio();el.preload='auto';el.crossOrigin='anonymous';const g=ac.createGain();g.gain.value=0;ac.createMediaElementSource(el).connect(g);g.connect(master);return {el:el,g:g,idx:-1};});
   noirDecks.forEach((d,i)=>{
-    d.el.addEventListener('timeupdate',()=>{if(i===noirAct&&!noirXf&&playing&&isFinite(d.el.duration)&&d.el.duration-d.el.currentTime<6)noirCross();});
+    ['loadedmetadata','playing','seeked'].forEach(ev=>d.el.addEventListener(ev,()=>{if(i===noirAct)recMedia();}));
+    d.el.addEventListener('timeupdate',()=>{if(i===noirAct){const n=Date.now();if(n-recPosAt>4000){recPosAt=n;recMedia();}}if(i===noirAct&&!noirXf&&playing&&isFinite(d.el.duration)&&d.el.duration-d.el.currentTime<6)noirCross();});
     d.el.addEventListener('ended',()=>{if(i===noirAct&&!noirXf&&playing)noirAdvance();});
     d.el.addEventListener('error',()=>{if(i===noirAct&&playing&&d.idx>=0){noirList=noirList.filter(x=>x!==d.idx);noirQ=noirQ.filter(x=>x!==d.idx);d.idx=-1;if(noirList.length)noirAdvance();else{noirRec=false;nextNow();}}});
   });
@@ -1966,7 +1967,7 @@ const NOIR_NAMES=(()=>{const adj=['Velvet','Smoky','Midnight','Amber','Blue','La
 const CHINA_NAMES=(()=>{const adj=MODES.china.adj,noun=MODES.china.noun,out=[],used=new Set(),r=mulberry(20261021);
   for(let i=0;i<REC.china.max;i++){let n,k=0;do{n=adj[Math.floor(r()*adj.length)]+' '+noun[Math.floor(r()*noun.length)];k++;}while(used.has(n)&&k<50);used.add(n);out.push(n);}
   return out;})();
-function noirUi(){noirBarShown=-1;noirOffUi();$('codeBtn').parentElement.style.display=(recMode()&&noirRec)?'none':'';if(!recMode()||!noirRec)return;const d=noirDecks&&noirDecks[noirAct],nm=mode==='china'?CHINA_NAMES:NOIR_NAMES;$('title').textContent=d&&d.idx>=0?nm[d.idx]:REC[mode].title;$('meta').textContent=REC[mode].meta;$('codeTxt').textContent='recording';}
+function noirUi(){noirBarShown=-1;noirOffUi();$('codeBtn').parentElement.style.display=(recMode()&&noirRec)?'none':'';if(!recMode()||!noirRec)return;const d=noirDecks&&noirDecks[noirAct],nm=mode==='china'?CHINA_NAMES:NOIR_NAMES;$('title').textContent=d&&d.idx>=0?nm[d.idx]:REC[mode].title;$('meta').textContent=REC[mode].meta;$('codeTxt').textContent='recording';recMedia();}
 function noirLoad(d){const i=noirNext();d.idx=i;d.el.src=noirPath(i);d.el.load();}
 function noirStart(){
   if(!recMode()||!noirRec||!playing)return;
@@ -2036,6 +2037,7 @@ function keepAlive(go){
 }
 let metaTune=null;
 function updateMediaSession(T){
+  if(recMode()&&noirRec){recMedia();return;}
   T=T||shown||tune;
   try{
     if(!('mediaSession' in navigator))return;
@@ -2046,6 +2048,22 @@ function updateMediaSession(T){
     navigator.mediaSession.playbackState=playing?'playing':'paused';
   }catch(e){}
   updateMediaPosition(lastBar,T);
+}
+/* a recording: the lock screen shows the track's own name and its real length and position */
+let recMetaKey='',recPosAt=0;
+function recMedia(){
+  try{
+    if(!('mediaSession' in navigator)||!recMode()||!noirRec||!noirDecks)return;
+    const d=noirDecks[noirAct];if(!d||d.idx<0)return;
+    const nm=(mode==='china'?CHINA_NAMES:NOIR_NAMES)[d.idx],key=mode+':'+d.idx;
+    if(recMetaKey!==key&&typeof MediaMetadata!=='undefined'){
+      navigator.mediaSession.metadata=new MediaMetadata({title:nm,artist:'Looplight',album:FLIP_NAME[mode],artwork:[{src:'icons/icon-192.png',sizes:'192x192',type:'image/png'},{src:'icons/icon-512.png',sizes:'512x512',type:'image/png'}]});
+      recMetaKey=key;metaTune=null;
+    }
+    navigator.mediaSession.playbackState=playing?'playing':'paused';
+    const dur=d.el.duration;
+    if(navigator.mediaSession.setPositionState&&isFinite(dur)&&dur>1)navigator.mediaSession.setPositionState({duration:dur,playbackRate:1,position:Math.min(dur,Math.max(0,d.el.currentTime))});
+  }catch(e){}
 }
 /* the lock screen shows one whole tune: its real length (32 bars) and where we are in it, not the length of the silent helper loop */
 function updateMediaPosition(bar,T){
@@ -2119,7 +2137,7 @@ function switchModeCore(m){
   recSwap(mode,m);
   mode=m;nextTune=null;const cfg=MODES[m];
   document.documentElement.dataset.mode=m;
-  $('appName').textContent='Looplight';$('tagline').textContent=FLIP_NAME[mode]+' · '+cfg.tagline;renderFlips();
+  $('appName').textContent='Looplight';$('tagline').textContent=FLIP_NAME[mode];renderFlips();
   labEls.forEach((l,i)=>{l.textContent=cfg.plan[i];});
   if(ac){toneLP.frequency.setTargetAtTime(cfg.tone,ac.currentTime,0.3);mainBus.gain.setTargetAtTime(0.9*cfg.trim,ac.currentTime,0.3);drumMain.gain.setTargetAtTime(0.9*cfg.trim,ac.currentTime,0.3);}
   flies.length=0;
