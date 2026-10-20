@@ -170,7 +170,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v41';
+const BUILD='looplight-v42';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -285,7 +285,7 @@ const KEYS=[0,2,3,5,7,9,10];
 function parseCode(str){
   const m=/^\s*([0-9a-z]{1,8})\s*[-\s]\s*([0-6])\s*([gjnsc]?)\s*$/i.exec(str||'');
   const sf=m&&m[3]?m[3].toLowerCase():'';
-  return m?{seed:parseInt(m[1],36),ki:+m[2],mode:sf==='g'?'groove':(sf==='j'||sf==='s')?'japan':sf==='n'?'noir':sf==='c'?'china':'cozy',style:sf==='s'?'sham':'koto',text:m[1].toLowerCase()+'-'+m[2]+sf}:null;
+  return m?{seed:parseInt(m[1],36),ki:+m[2],mode:sf==='g'?'groove':(sf==='j'||sf==='s'||sf==='t')?'japan':sf==='n'?'noir':sf==='c'?'china':'cozy',style:sf==='s'?'sham':sf==='t'?'tsu':'koto',text:m[1].toLowerCase()+'-'+m[2]+sf}:null;
 }
 function compose(prevPc,fixed,m){
   m=fixed?fixed.mode:(m||mode);
@@ -319,8 +319,8 @@ function composeInner(prevPc,fixed,seed,m){
 }
 
 /* ---- Japanese Classical side: koto patterns on a five-note scale, a shakuhachi melody that breathes, and the odd soft taiko ---- */
-const JSCALES={yo:[0,2,5,7,9],ryo:[0,2,4,7,9],hirajoshi:[0,2,3,7,8],in:[0,1,5,7,8],iwato:[0,1,5,6,10]};
-const JNAMES={yo:'Yo',ryo:'Ryo',hirajoshi:'Hirajoshi'};
+const JSCALES={yo:[0,2,5,7,9],ryo:[0,2,4,7,9],hirajoshi:[0,2,3,7,8],minyo:[0,3,5,7,10],in:[0,1,5,7,8],iwato:[0,1,5,6,10]};
+const JNAMES={yo:'Yo',ryo:'Ryo',hirajoshi:'Hirajoshi',minyo:'Minyo',in:'In',iwato:'Iwato'};
 const JPROG=[[0,3,2,0],[0,2,4,0],[0,4,3,0],[0,3,4,2],[0,1,3,0],[0,2,1,0]];
 const KP_SOFT=[[[0,0],[1,2],[2,4],[4,2],[5,4],[6,5]],[[0,0],[2,2],[3,4],[4,2],[6,4],[7,2]],[[0,4],[1,2],[2,0],[4,2],[5,4],[6,2]],[[0,0],[1,2],[2,3],[4,4],[5,3],[6,2]]];
 const KP_INTRO=[[[0,0],[2,2],[4,4],[6,2]],[[0,0],[3,2],[4,4],[7,2]],[[0,2],[2,0],[4,2],[6,4]]];
@@ -359,21 +359,67 @@ function jPhrase(pool,keyPc,busy,home,motif){
   }
   return {bars:bars,motif:m};
 }
+/* ---- Tsugaru shamisen: fast, percussive, in groups of 3+3+2 sixteenths, with runs, repeated strikes and a held note to close each phrase ---- */
+function tsuPhrase(pool,keyPc,busy,home,motif){
+  const tonics=pool.filter(x=>((x-keyPc)%12+12)%12===0&&x>=60&&x<=76);
+  const m=motif||{cells:[],start:null};
+  if(m.start===null)m.start=pick(tonics.length?tonics:[pool[Math.floor(pool.length/2)]]);
+  const G=[0,3,6,8,11,14],bars=[];let prev=m.start;
+  for(let b=0;b<4;b++){
+    if(!m.cells[b]){
+      if(b===1&&m.cells[0])m.cells[b]=m.cells[0];
+      else m.cells[b]=b===3?'end':pick(busy?['run','run','echo','rep','pick']:['rep','rep','run','pick','echo']);
+    }
+    const kind=m.cells[b],out=[];let idx=clamp(nearIdx(pool,prev)+(busy?1:0),0,pool.length-1);
+    const at=i=>pool[clamp(i,0,pool.length-1)];
+    const add=(p,mid,dur,v,acc)=>out.push({step:p*0.5,midi:mid,dur:dur,v:v,acc:!!acc});
+    if(kind==='run'){
+      let dir=pick([1,-1]);
+      for(let p=0;p<16;p++){if(p%5===4&&R()<0.5)dir=-dir;idx=clamp(idx+dir*(R()<0.8?1:2),0,pool.length-1);const a=G.indexOf(p)>=0;add(p,at(idx),a?0.9:0.5,a?1:0.7,a);}
+    }else if(kind==='rep'){
+      G.forEach((g,gi)=>{idx=clamp(idx+pick([-1,0,0,1,2]),0,pool.length-1);add(g,at(idx),g===14||g===6?0.9:1.4,1,true);if(gi%2===0)add(g+1,at(idx+1),0.5,0.6,false);else if(g<14)add(g+1,at(idx-1),0.5,0.6,false);});
+    }else if(kind==='pick'){
+      for(let p=2;p<16;p++){idx=clamp(idx+(p%2?2:-1),0,pool.length-1);const a=G.indexOf(p)>=0;add(p,at(idx),a?0.9:0.5,a?1:0.68,a);}
+    }else if(kind==='echo'){
+      const base=idx,dir=pick([1,-1]),seq=[];
+      for(let p=0;p<8;p++){seq.push(clamp(base+dir*Math.floor(p*0.7),0,pool.length-1));}
+      seq.forEach((q,p)=>add(p,at(q),0.5,p%3===0?1:0.7,p%3===0));
+      seq.forEach((q,p)=>add(p+8,at(q-2),0.5,p%3===0?0.95:0.65,p%3===0));
+    }else{
+      for(let p=0;p<8;p++){idx=clamp(idx-1,0,pool.length-1);const a=G.indexOf(p)>=0;add(p,at(idx),a?0.9:0.5,a?1:0.7,a);}
+      const tg=home?tonics:pool.filter(x=>((x-keyPc)%12+12)%12===7&&x>=60&&x<=76);
+      const fin=(tg.length?tg:tonics.length?tonics:[at(idx)]);const mid=fin[nearIdx(fin,at(idx))];
+      add(8,mid,3.6,1,true);idx=nearIdx(pool,mid);
+    }
+    prev=out.length?out[out.length-1].midi:prev;
+    bars.push(out);
+  }
+  return {bars:bars,motif:m};
+}
 function composeJapan(prevPc,fixed,seed){
-  const style=fixed?(fixed.style||'koto'):(window.__JSTYLE||(Math.random()<0.75?'sham':'koto'));
+  const style=fixed?(fixed.style||'koto'):(window.__JSTYLE||((x=>x<0.4?'tsu':x<0.75?'sham':'koto')(Math.random())));
   const cfg=MODES.japan;
-  const scaleName=pick(['in','in','hirajoshi','hirajoshi','iwato','yo']),sc=JSCALES[scaleName];
+  const scaleName=style==='tsu'?pick(['minyo','minyo','hirajoshi']):pick(['in','in','hirajoshi','hirajoshi','iwato','yo']),sc=JSCALES[scaleName];
   let ki=rnd(7);
   if(fixed)ki=fixed.ki;else if(KEYS[ki]===prevPc)ki=(ki+1)%7;
   const keyPc=KEYS[ki];
-  const kpool=jPool(keyPc,sc,38,84),mpool=jPool(keyPc,sc,56,72);
+  const kpool=jPool(keyPc,sc,38,84),mpool=style==='tsu'?jPool(keyPc,sc,57,81):jPool(keyPc,sc,56,72);
   let idx0=0;for(let i=0;i<kpool.length;i++){if(kpool[i]>=48&&((kpool[i]-keyPc)%12+12)%12===0){idx0=i;break;}}
   const ia=rnd(JPROG.length);let ib=rnd(JPROG.length-1);if(ib>=ia)ib++;
   const T={
-    mode:'japan',style:style,code:seed.toString(36)+'-'+ki+(style==='sham'?'s':'j'),name:pick(cfg.adj)+' '+pick(cfg.noun),minor:false,keyPc:keyPc,scaleName:scaleName,
+    mode:'japan',style:style,code:seed.toString(36)+'-'+ki+(style==='sham'?'s':style==='tsu'?'t':'j'),name:pick(cfg.adj)+' '+pick(cfg.noun),minor:false,keyPc:keyPc,scaleName:scaleName,
     bpm:cfg.bpm[0]+rnd(cfg.bpm[1]-cfg.bpm[0]+1),swing:0,melVoice:'shaku',
     kpool:kpool,idx0:idx0,progA:JPROG[ia],progB:JPROG[ib],kintro:pick(KP_INTRO),kpat:pick(KP_SOFT),kbusy:pick(KP_BUSY),bus:null,dbus:null
   };
+  if(style==='tsu'){
+    T.bpm=124+rnd(24);
+    const ta=tsuPhrase(mpool,keyPc,false,false,null);
+    const ta2=tsuPhrase(mpool,keyPc,false,true,{cells:[ta.motif.cells[0],ta.motif.cells[1]],start:ta.motif.start});
+    const tb=tsuPhrase(mpool,keyPc,true,false,null);
+    const tb2=tsuPhrase(mpool,keyPc,true,true,{cells:[tb.motif.cells[0],tb.motif.cells[1]],start:tb.motif.start});
+    T.A=ta.bars;T.A2=ta2.bars;T.B=tb.bars;T.B2=tb2.bars;
+    return T;
+  }
   const pa=jPhrase(mpool,keyPc,false,false,null);
   const pa2=jPhrase(mpool,keyPc,false,true,{rhy:[pa.motif.rhy[0],pa.motif.rhy[1]],con:[pa.motif.con[0],pa.motif.con[1]],start:pa.motif.start});
   const pb=jPhrase(mpool,keyPc,true,false,null);
@@ -1401,7 +1447,28 @@ function playSmpNoise(inst,t,v){
   const src=ac.createBufferSource();src.buffer=smp.buf;const g=ac.createGain();g.gain.value=Math.max(0.0001,v*smp.g);src.connect(g);g.connect(bus);src.start(Math.max(t,ac.currentTime+0.003),smp.on);
 }
 let noirLast={t:-9,m:0};
+/* Tsugaru: shamisen runs struck hard with the plectrum, over taiko drum hits */
+function scheduleTsugaruBar(T,t0,bar,sec,bi,e,st,ending){
+  const hum=()=>(Math.random()-0.5)*0.006;
+  if(smpHas('taiko')&&!S.lite){
+    playSample('taiko',t0,36,sec===0?0.3:0.6,1,bus);
+    if(sec>=1&&(bi%2===1||sec===3||sec===4))playSample('taiko',st(4)+hum(),41,0.35,1,bus);
+    if(bi===3&&sec>=1&&sec!==7&&!ending){[5,6,7].forEach((q,i)=>playSample('taiko',st(q)+hum(),[46,41,36][i],0.3+i*0.14,1,bus));}
+  }
+  uiQ.push({t:t0,k:'kick'});
+  const pk=sec===0?(bi>=2?'A':null):PLAN[sec].ph;
+  if(pk&&T[pk]){
+    const quiet=sec===0?0.55:(sec===7?0.8:1);
+    T[pk][bi].forEach(n=>{
+      const t=st(n.step)+hum(),nd=Math.min(4,n.dur*e*0.95),vv=(n.v||1)*quiet;
+      voiceSham(t,n.midi,vv,nd,false,0.15,false);
+      if(n.acc&&!S.lite)noiseHit(t,0.05,'bandpass',800,1.1,0.04*vv,bus);
+      uiQ.push({t:t,k:'note',m:n.midi});
+    });
+  }
+}
 function scheduleJapanBar(T,t0,bar,sec,bi,e,st,ending){
+  if(T.style==='tsu'){scheduleTsugaruBar(T,t0,bar,sec,bi,e,st,ending);return;}
   const busy=(sec===3||sec===4);
   const d=(busy?T.progB:T.progA)[bi],kp=T.kpool,c=T.idx0+d;
   const kn=i=>kp[clamp(i,0,kp.length-1)];
@@ -1714,6 +1781,7 @@ function scheduleBar(t0){
   const dropOut=ending||(sec===3&&bi<2);
 
   if(bar===0)delayNode.delayTime.setTargetAtTime(60/T.bpm,t0,0.08);
+  if(bar===0&&T.mode==='japan'){const ts=T.style==='tsu';sendNodes.r.gain.setTargetAtTime(S.lite?0:(ts?0.38:MODES.japan.reverb),t0,0.3);toneLP.frequency.setTargetAtTime(ts?3600:MODES.japan.tone,t0,0.3);mainBus.gain.setTargetAtTime(0.9*MODES.japan.trim*(ts?0.55:1),t0,0.3);}
   /* transitions: the new tune swells in over its first bar; the old one thins out over its last two, then its reverb and delay tails ring away */
   const barLen=e*8;
   if(bar===0){
@@ -2096,7 +2164,7 @@ function renderTune(T,bar){
     updateMediaSession();
     $('title').textContent=T.name;
     $('codeTxt').textContent=T.code;
-    $('meta').textContent=NOTE[T.keyPc]+' '+(T.mode==='china'?(CNAMES[T.scaleName]+' · '+T.bpm+' BPM · Guzheng, bamboo flute & erhu'):T.mode==='japan'?(JNAMES[T.scaleName]+' · '+T.bpm+' BPM · '+(T.style==='sham'?'Shamisen, koto & shakuhachi':'Koto & shakuhachi')):T.mode==='noir'?(T.minor?'minor':'major')+' · '+T.bpm+' BPM · Tenor sax & piano · '+(smpHas('sax')?'recorded sax ':'SYNTH FALLBACK ')+BUILD.replace('looplight-',''):(T.minor?'minor':'major')+' · '+T.bpm+' BPM · '+Math.round(T.swing*100)+'% swing');
+    $('meta').textContent=NOTE[T.keyPc]+' '+(T.mode==='china'?(CNAMES[T.scaleName]+' · '+T.bpm+' BPM · Guzheng, bamboo flute & erhu'):T.mode==='japan'?(JNAMES[T.scaleName]+' · '+T.bpm+' BPM · '+(T.style==='tsu'?'Tsugaru shamisen & taiko':T.style==='sham'?'Shamisen, koto & shakuhachi':'Koto & shakuhachi')):T.mode==='noir'?(T.minor?'minor':'major')+' · '+T.bpm+' BPM · Tenor sax & piano · '+(smpHas('sax')?'recorded sax ':'SYNTH FALLBACK ')+BUILD.replace('looplight-',''):(T.minor?'minor':'major')+' · '+T.bpm+' BPM · '+Math.round(T.swing*100)+'% swing');
   }
   noirUi();
   $('eyebrow').textContent=started?'Now playing':'Up first';
