@@ -1245,13 +1245,13 @@ const SMP_CFG={
   koto:{sus:false,a:0.004,rel:0.4,lp:2800,norm:'peak',target:0.3},
   shaku:{sus:true,a:0.14,rel:0.5,vib:4,lp:2300,norm:'rms',target:0.04},
   taiko:{sus:false,a:0.004,rel:0.5,norm:'peak',target:0.4},
-  sax:{sus:true,a:0.05,rel:0.3,vib:0,lp:3800,norm:'rms',target:0.1},
-  saxv:{sus:true,a:0.06,rel:0.4,vib:0,lp:3800,norm:'rms',target:0.1},
+  sax:{sus:true,a:0.02,rel:0.3,vib:0,lp:3800,norm:'rms',target:0.1},
+  saxv:{sus:true,a:0.02,rel:0.4,vib:0,lp:3800,norm:'rms',target:0.1},
   dtr:{sus:false,a:0.008,rel:0.4,lp:2400,norm:'peak',target:0.35},
   piano:{sus:false,a:0.004,rel:0.5,norm:'peak',target:0.3},
   bass:{sus:false,a:0.006,rel:0.25,norm:'peak',target:0.4},
-  flute:{sus:true,a:0.07,rel:0.3,vib:9,lp:3200,norm:'rms',target:0.062},
-  erhu:{sus:true,a:0.1,rel:0.35,vib:24,lp:2500,norm:'rms',target:0.058}
+  flute:{sus:true,a:0.03,rel:0.3,vib:9,lp:3200,norm:'rms',target:0.062},
+  erhu:{sus:true,a:0.04,rel:0.35,vib:24,lp:2500,norm:'rms',target:0.058}
 };
 let SMP=null,loadingBand=false,smpLoad={};
 function b64buf(b){const bin=atob(b),n=bin.length,u=new Uint8Array(n);for(let i=0;i<n;i++)u[i]=bin.charCodeAt(i);return u.buffer;}
@@ -1282,7 +1282,10 @@ function loadSamples(){
         let meas;
         if(cfg.norm==='peak')meas=pk||1;
         else{let e=0,n=0;for(let i=Math.floor(sr*0.3);i<Math.min(x.length,Math.floor(sr*1.5));i++){e+=x[i]*x[i];n++;}meas=Math.sqrt(e/Math.max(1,n))||1;}
-        SMP[inst].keys.push(m);SMP[inst].map[m]={buf:buf,on:on/sr,g:Math.min(8,cfg.target/meas)};
+        let lat=0;{const w=Math.max(1,Math.floor(sr*0.01)),env=[];let mx=0;
+          for(let i=on;i+w<x.length&&i<on+sr*0.8;i+=w){let q=0;for(let k=i;k<i+w;k++)q+=x[k]*x[k];const r=Math.sqrt(q/w);env.push(r);if(r>mx)mx=r;}
+          for(let i=0;i<env.length;i++){if(env[i]>=0.5*mx){lat=i*w/sr;break;}}}
+        SMP[inst].keys.push(m);SMP[inst].map[m]={buf:buf,on:on/sr,lat:lat,g:Math.min(8,cfg.target/meas)};
       }).catch(()=>{}));
     return Promise.all(jobs).then(()=>{SMP[inst].keys.sort((a,b)=>a-b);SMP[inst].done=true;});
     });
@@ -1292,6 +1295,7 @@ function playSample(inst,t,midi,v,dur,dest,opt){
   const set=SMP&&SMP[inst];if(!set||!set.keys.length)return;
   const cfg=SMP_CFG[inst],key=set.keys[nearIdx(set.keys,midi)],smp=set.map[key];
   const rate=Math.pow(2,(midi-key)/12),src=ac.createBufferSource();src.buffer=smp.buf;src.playbackRate.value=rate;
+  const lead=Math.min(0.3,(smp.lat||0)/rate+cfg.a*0.4);t=Math.max(t-lead,ac.currentTime+0.003);dur=dur+lead;
   const g=ac.createGain(),peak=Math.max(0.0001,v*smp.g*((opt&&opt.gain)||1));
   const hold=Math.max(0.12,dur),rel=(opt&&opt.rel)||cfg.rel;
   g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(peak,t+cfg.a);
@@ -2173,7 +2177,7 @@ window.__cozy={smp:()=>smpReady()?2:0,reduction:()=>({comp:comp_&&comp_.reductio
 })();
 
 /* installable app: the page is fetched fresh whenever you are online and kept for offline use */
-const BUILD='looplight-v25';
+const BUILD='looplight-v26';
 function showUpdateNotice(){
   if(document.getElementById('updNote'))return;
   const d=document.createElement('div');d.id='updNote';d.className='updnote';d.setAttribute('role','status');
