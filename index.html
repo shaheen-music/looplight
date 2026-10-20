@@ -1556,14 +1556,16 @@ function scheduleNoirBar(T,t0,bar,sec,bi,e,st12,ending){
     if(n.br&&!S.lite){if(smpHas('saxb'))playSmpNoise('saxb',Math.max(t0-0.05,t-0.3),0.9*n.v);else voiceBreath(Math.max(t0-0.05,t-0.24),n.v);}
     if(n.gr&&!S.lite){if(smpHas('sax'))playSample('sax',t-0.1,n.m-1,n.v*0.5,0.1,bus);else voiceSax(t-0.11,mtof(n.m-1),0.12,n.v*0.7,{});}
     const sd=Math.min(4.2,n.d*u*0.97+0.03);
+    window.__sx=window.__sx||{samp:0,synth:0};
     if(smpHas('sax')){
+      window.__sx.samp++;
       const leg=t-noirLast.t<0.14&&Math.abs(n.m-noirLast.m)<=9&&!n.sc;
       const sl=leg?clamp((noirLast.m-n.m)*100,-200,200)*0.6:0;
       playSample(n.v<0.62&&smpHas('saxp')?'saxp':'sax',t,n.m,n.v,sd,bus,{scoop:n.sc,fall:n.fl,leg:leg,sl:sl});
       if(!leg&&!S.lite&&smpHas('saxk'))playSmpNoise('saxk',t+0.005,0.55*n.v);
       noirLast={t:t+sd,m:n.m};
     }
-    else voiceSax(t,mtof(n.m),Math.min(4,sd),n.v,{scoop:n.sc,fall:n.fl});
+    else{window.__sx.synth++;voiceSax(t,mtof(n.m),Math.min(4,sd),n.v,{scoop:n.sc,fall:n.fl});}
     uiQ.push({t:t,k:'note',m:n.m});
   });
   if(on('nvinyl')){const k=rnd(3);for(let i=0;i<k;i++)noiseHit(t0+Math.random()*u*12,0.01,'highpass',2500,0.5,(0.012+Math.random()*0.02)*avF('nvinyl'),drumBus);}
@@ -1970,7 +1972,7 @@ const playBtn=$('play');
 const ICON_PLAY='<svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1l9 5-9 5z" fill="currentColor"/></svg>';
 const ICON_PAUSE='<svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="3" height="9" rx="1" fill="currentColor"/><rect x="7" y="1.5" width="3" height="9" rx="1" fill="currentColor"/></svg>';
 function renderPlayBtn(){playBtn.innerHTML=playing?ICON_PAUSE+'<span>Pause</span>':ICON_PLAY+'<span>'+(started?'Resume':'Play')+'</span>';updateMediaSession();}
-function renderStatus(){$('status').innerHTML=loadingBand?'<b>'+(mode==='noir'?'Warming up the sax…':mode==='china'?'Tuning the guzheng…':'Tuning the koto…')+'</b>':'';}
+function renderStatus(){shown=null;$('status').innerHTML=loadingBand?'<b>'+(mode==='noir'?'Warming up the sax…':mode==='china'?'Tuning the guzheng…':'Tuning the koto…')+'</b>':'';}
 let shown=null;
 function renderTune(T,bar){
   if(shown!==T){
@@ -1978,7 +1980,7 @@ function renderTune(T,bar){
     updateMediaSession();
     $('title').textContent=T.name;
     $('codeTxt').textContent=T.code;
-    $('meta').textContent=NOTE[T.keyPc]+' '+(T.mode==='china'?(CNAMES[T.scaleName]+' · '+T.bpm+' BPM · Guzheng, bamboo flute & erhu'):T.mode==='japan'?(JNAMES[T.scaleName]+' · '+T.bpm+' BPM · '+(T.style==='sham'?'Shamisen, koto & shakuhachi':'Koto & shakuhachi')):T.mode==='noir'?(T.minor?'minor':'major')+' · '+T.bpm+' BPM · Tenor sax & piano':(T.minor?'minor':'major')+' · '+T.bpm+' BPM · '+Math.round(T.swing*100)+'% swing');
+    $('meta').textContent=NOTE[T.keyPc]+' '+(T.mode==='china'?(CNAMES[T.scaleName]+' · '+T.bpm+' BPM · Guzheng, bamboo flute & erhu'):T.mode==='japan'?(JNAMES[T.scaleName]+' · '+T.bpm+' BPM · '+(T.style==='sham'?'Shamisen, koto & shakuhachi':'Koto & shakuhachi')):T.mode==='noir'?(T.minor?'minor':'major')+' · '+T.bpm+' BPM · Tenor sax & piano · '+(smpHas('sax')?'recorded sax ':'SYNTH FALLBACK ')+BUILD.replace('looplight-',''):(T.minor?'minor':'major')+' · '+T.bpm+' BPM · '+Math.round(T.swing*100)+'% swing');
   }
   $('eyebrow').textContent=started?'Now playing':'Up first';
   renderBar(bar);
@@ -2249,7 +2251,7 @@ window.__cozy={smp:()=>smpReady()?2:0,reduction:()=>({comp:comp_&&comp_.reductio
 })();
 
 /* installable app: the page is fetched fresh whenever you are online and kept for offline use */
-const BUILD='looplight-v29';
+const BUILD='looplight-v30';
 function showUpdateNotice(){
   if(document.getElementById('updNote'))return;
   const d=document.createElement('div');d.id='updNote';d.className='updnote';d.setAttribute('role','status');
