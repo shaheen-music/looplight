@@ -208,7 +208,7 @@ const MODES={
     noun:['Lounge','Alley','Corner','Cigar','Window','Boulevard','Platform','Hotel','Streetlight','Stairwell','Taxi','Last Call']}
 };
 let comp_=null,lim_=null,hpNode=null;const sendNodes={};
-const MODE_ORDER=['cozy','groove','japan','noir','china'];
+const MODE_ORDER=['cozy','groove','japan','china'];
 /* settings remembered on this phone between visits */
 const STORE_KEY='looplight.settings.v1';
 let SAVED=null;try{SAVED=JSON.parse(localStorage.getItem(STORE_KEY)||'null');}catch(e){}
@@ -278,9 +278,9 @@ function varyPhrase(T,P){
 }
 const KEYS=[0,2,3,5,7,9,10];
 function parseCode(str){
-  const m=/^\s*([0-9a-z]{1,8})\s*[-\s]\s*([0-6])\s*([gjnsc]?)\s*$/i.exec(str||'');
+  const m=/^\s*([0-9a-z]{1,8})\s*[-\s]\s*([0-6])\s*([gjsc]?)\s*$/i.exec(str||'');
   const sf=m&&m[3]?m[3].toLowerCase():'';
-  return m?{seed:parseInt(m[1],36),ki:+m[2],mode:sf==='g'?'groove':(sf==='j'||sf==='s')?'japan':sf==='n'?'noir':sf==='c'?'china':'cozy',style:sf==='s'?'sham':'koto',text:m[1].toLowerCase()+'-'+m[2]+sf}:null;
+  return m?{seed:parseInt(m[1],36),ki:+m[2],mode:sf==='g'?'groove':(sf==='j'||sf==='s')?'japan':sf==='c'?'china':'cozy',style:sf==='s'?'sham':'koto',text:m[1].toLowerCase()+'-'+m[2]+sf}:null;
 }
 function compose(prevPc,fixed,m){
   m=fixed?fixed.mode:(m||mode);
@@ -2328,7 +2328,7 @@ window.__cozy={ps:(...a)=>playSample(...a),getBus:()=>mainBus,init:()=>{initAudi
 })();
 
 /* installable app: the page is fetched fresh whenever you are online and kept for offline use */
-const BUILD='looplight-v33';
+const BUILD='looplight-v34';
 function showUpdateNotice(){
   if(document.getElementById('updNote'))return;
   const d=document.createElement('div');d.id='updNote';d.className='updnote';d.setAttribute('role','status');
