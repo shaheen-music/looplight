@@ -1,6 +1,6 @@
 # Looplight
 
-Endless music in five moods: Cozy, Sunny Side, Japanese Classical (Tsugaru shamisen and taiko), Jazz Noir and Silk & Bamboo. Cozy, Sunny Side, Japanese Classical and Silk & Bamboo are generated as you listen; Jazz Noir plays recordings. One page, no build step, works offline once opened.
+Endless music in four moods: Cozy, Sunny Side, Jazz Noir and Silk & Bamboo (a fifth, Japanese Classical with Tsugaru shamisen and taiko, is switched off for now). Cozy, Sunny Side and Silk & Bamboo are generated as you listen; Jazz Noir plays recordings. One page, no build step, works offline once opened.
 
 Open it here: https://shaheen-music.github.io/looplight/
 
@@ -16,4 +16,4 @@ Jazz Noir plays the recordings in `audio/jazz-noir/` (`noir-01.mp3` ... `noir-40
 
 ## Tsugaru transcriptions
 
-The Japanese Classical side plays real Tsugaru-jamisen pieces (Tsugaru Jonkara Kyūbushi, Kuroishi Yosare Bushi, Tsugaru Jinku, Tsugaru Shiogama Jinku, Yasaburō Bushi, Kokiriko Bushi). The note data embedded in `index.html` comes from the transcriptions in [threedaymonk/tsugaru](https://github.com/threedaymonk/tsugaru) (shamisen.space), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). That data is therefore shared under the same licence. The sound itself is synthesized by the app.
+The Japanese Classical side (switched off for now, the code is kept) plays real Tsugaru-jamisen pieces (Tsugaru Jonkara Kyūbushi, Kuroishi Yosare Bushi, Tsugaru Jinku, Tsugaru Shiogama Jinku, Yasaburō Bushi, Kokiriko Bushi). The note data embedded in `index.html` comes from the transcriptions in [threedaymonk/tsugaru](https://github.com/threedaymonk/tsugaru) (shamisen.space), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). That data is therefore shared under the same licence. The sound itself is synthesized by the app.

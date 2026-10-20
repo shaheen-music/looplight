@@ -170,7 +170,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v51';
+const BUILD='looplight-v52';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -191,7 +191,7 @@ const MODES={
     plan:['Intro','Theme','Theme 2','Bridge','Bridge 2','Return','Variation','Outro'],
     adj:['Slow','Quiet','Warm','Rainy','Sleepy','Golden','Late','Soft','Hazy','Gentle','Lazy','Misty'],
     noun:['Sunday','Window','Tea','Blanket','Porch','Kettle','Candle','Library','Morning','Sweater','Window Seat','Evening','Staircase','Bookshop']},
-  groove:{title:'Sunny Side',tagline:'Bright · easy · good company',flipTo:'Flip to Japanese Classical',bpm:[94,112],swing:[0.03,0.08],minorP:0.5,
+  groove:{title:'Sunny Side',tagline:'Bright · easy · good company',flipTo:'Flip to Cozy',bpm:[94,112],swing:[0.03,0.08],minorP:0.5,
     voices:['synth','synth','pluck','epiano','marimba'],trim:1.15,reverb:0.45,tone:7000,hatFrom:0,kickFrom:0,hatMul:1.35,kickV:1.15,snare:true,ghost:false,bassDur:[2.2,1.5],
     plan:['Intro','Morning','Morning 2','Break','Break 2','Return','Variation','Outro'],
     adj:['Sunny','Bright','Breezy','Honey','Easy','Golden','Lemon','Cheerful','Light','Fresh','Little','Merry'],
@@ -213,7 +213,8 @@ const MODES={
     noun:['Lounge','Alley','Corner','Cigar','Window','Boulevard','Platform','Hotel','Streetlight','Stairwell','Taxi','Last Call']}
 };
 let comp_=null,lim_=null,hpNode=null;const sendNodes={};
-const MODE_ORDER=['cozy','groove','japan','noir','china'];
+/* Japanese Classical is switched off for now (its code is kept below): it is left out of this list, so it can't be flipped to, restored from saved state or opened from a code. Put 'japan' back between 'groove' and 'noir' to bring it back. */
+const MODE_ORDER=['cozy','groove','noir','china'];
 /* settings remembered on this phone between visits */
 const STORE_KEY='looplight.settings.v1';
 let SAVED=null;try{SAVED=JSON.parse(localStorage.getItem(STORE_KEY)||'null');}catch(e){}
@@ -285,6 +286,7 @@ const KEYS=[0,2,3,5,7,9,10];
 function parseCode(str){
   const m=/^\s*([0-9a-z]{1,8})\s*[-\s]\s*([0-6])\s*([gjnsc]?)\s*$/i.exec(str||'');
   const sf=m&&m[3]?m[3].toLowerCase():'';
+  if(m&&/^[jst]$/i.test(m[3]||''))return null;
   return m?{seed:parseInt(m[1],36),ki:+m[2],mode:sf==='g'?'groove':(sf==='j'||sf==='s'||sf==='t')?'japan':sf==='n'?'noir':sf==='c'?'china':'cozy',style:sf==='s'?'sham':sf==='t'?'tsu':'koto',text:m[1].toLowerCase()+'-'+m[2]+sf}:null;
 }
 function compose(prevPc,fixed,m){
@@ -2107,7 +2109,7 @@ function switchModeCore(m){
   if(m==='noir'){if(playing)noirEnter();}else noirStop();
   saveSettings();renderAmbVols();
 }
-function setMode(m){if(m===mode)return;switchModeCore(m);nextNow();}
+function setMode(m){if(m===mode||MODE_ORDER.indexOf(m)<0)return;switchModeCore(m);nextNow();}
 let flipping=false;
 function flipCard(to){
   if(MODE_ORDER.indexOf(to)<0||to===mode)to=MODE_ORDER[(MODE_ORDER.indexOf(mode)+1)%MODE_ORDER.length];

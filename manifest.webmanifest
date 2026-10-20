@@ -1,7 +1,7 @@
 {
  "name": "Looplight",
  "short_name": "Looplight",
- "description": "Endless generative music in three moods: Cozy, Sunny Side and Japanese Classical.",
+ "description": "Endless generative music in four moods: Cozy, Sunny Side, Jazz Noir and Silk & Bamboo.",
  "start_url": "/looplight/",
  "scope": "/looplight/",
  "display": "standalone",
