@@ -62,10 +62,6 @@ h1{margin:0;font:400 clamp(1.2rem,1.05rem + 1vw,1.6rem)/1.15 var(--f-display);le
 .offbtn{display:none;font:400 .66rem/1 var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:none;border:1px solid var(--line);border-radius:999px;padding:5px 10px;margin:.2rem 0 .4rem;cursor:pointer}
 .offbtn.on{display:inline-block}
 .offbtn+.offbtn{margin-left:6px}
-.seek{display:none;align-items:center;gap:8px;margin:.7rem 0 0;font:400 .7rem/1 var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
-.seek.on{display:flex}
-.seek span{min-width:2.9rem}
-.seek span:last-child{text-align:right}
 .offbtn[disabled]{opacity:.7;cursor:default}
 
 .scene{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface)}
@@ -136,7 +132,6 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
       <p class="meta"><button type="button" class="codebtn" id="codeBtn" title="Copy this tune's code">Code: <span id="codeTxt">-</span></button></p>
     </div>
     <div class="shape" id="shape" aria-label="Where you are in the tune"></div>
-    <div class="seek" id="seek"><span id="seekT">0:00</span><input type="range" id="seekR" min="0" max="1000" value="0" step="1" aria-label="Position in the track"><span id="seekD">0:00</span></div>
     <p class="upnext" id="upnext"></p>
   </section>
 
@@ -176,7 +171,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v58';
+const BUILD='looplight-v59';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -1922,24 +1917,12 @@ function recSave(){
   }catch(e){}
 }
 window.addEventListener('pagehide',recSave);
-/* seek bar (recorded sides only) */
-const fmtT=x=>{x=Math.max(0,Math.floor(x||0));const h=Math.floor(x/3600),m=Math.floor(x%3600/60),r=x%60;return (h?h+':'+String(m).padStart(2,'0'):m)+':'+String(r).padStart(2,'0');};
-let seeking=false;
-function seekUi(){
-  const box=$('seek'),on=recMode()&&!!noirRec&&!!noirDecks;
-  box.classList.toggle('on',on);if(!on)return;
-  const d=noirDecks[noirAct],du=d.el.duration;
-  if(!isFinite(du)||du<1){$('seekT').textContent='0:00';$('seekD').textContent='0:00';return;}
-  if(!seeking){$('seekR').value=Math.round(1000*d.el.currentTime/du);$('seekT').textContent=fmtT(d.el.currentTime);}
-  $('seekD').textContent=fmtT(du);
-}
+/* seeking (from the lock screen) */
 function seekTo(sec){
   if(!recMode()||!noirRec||!noirDecks)return;
   const d=noirDecks[noirAct],du=d.el.duration;if(!isFinite(du))return;
-  d.el.currentTime=Math.min(du-0.5,Math.max(0,sec));recMedia();seekUi();
+  d.el.currentTime=Math.min(du-0.5,Math.max(0,sec));recMedia();
 }
-$('seekR').addEventListener('input',()=>{seeking=true;const d=noirDecks&&noirDecks[noirAct];if(d&&isFinite(d.el.duration))$('seekT').textContent=fmtT($('seekR').value/1000*d.el.duration);});
-$('seekR').addEventListener('change',()=>{const d=noirDecks&&noirDecks[noirAct];if(d&&isFinite(d.el.duration))seekTo($('seekR').value/1000*d.el.duration);seeking=false;});
 function recSwap(from,to){
   if(from===to)return;
   if(REC[from])recSave();
@@ -2016,7 +1999,7 @@ const NOIR_NAMES=(()=>{const adj=['Velvet','Smoky','Midnight','Amber','Blue','La
 const CHINA_NAMES=(()=>{const adj=MODES.china.adj,noun=MODES.china.noun,out=[],used=new Set(),r=mulberry(20261021);
   for(let i=0;i<REC.china.max;i++){let n,k=0;do{n=adj[Math.floor(r()*adj.length)]+' '+noun[Math.floor(r()*noun.length)];k++;}while(used.has(n)&&k<50);used.add(n);out.push(n);}
   return out;})();
-function noirUi(){noirBarShown=-1;noirOffUi();$('codeBtn').parentElement.style.display=(recMode()&&noirRec)?'none':'';seekUi();if(!recMode()||!noirRec)return;const d=noirDecks&&noirDecks[noirAct],nm=mode==='china'?CHINA_NAMES:NOIR_NAMES;$('title').textContent=d&&d.idx>=0?nm[d.idx]:REC[mode].title;$('meta').textContent=REC[mode].meta;$('codeTxt').textContent='recording';recMedia();seekUi();}
+function noirUi(){noirBarShown=-1;noirOffUi();$('codeBtn').parentElement.style.display=(recMode()&&noirRec)?'none':'';if(!recMode()||!noirRec)return;const d=noirDecks&&noirDecks[noirAct],nm=mode==='china'?CHINA_NAMES:NOIR_NAMES;$('title').textContent=d&&d.idx>=0?nm[d.idx]:REC[mode].title;$('meta').textContent=REC[mode].meta;$('codeTxt').textContent='recording';recMedia();}
 function noirLoad(d){const i=noirNext();d.idx=i;d.el.src=noirPath(i);d.el.load();}
 function noirStart(){
   if(!recMode()||!noirRec||!playing)return;
@@ -2369,7 +2352,6 @@ function processQueue(){
   /* a recording: the 32 bars (Head to Outro) are spread across the track, so the last one lights as the track ends */
   if(recMode()&&noirRec&&noirDecks){
     const d=noirDecks[0].g.gain.value>=noirDecks[1].g.gain.value?noirDecks[0]:noirDecks[1],dur=d.el.duration;
-    seekUi();
     if(isFinite(dur)&&dur>1){const b=clamp(Math.floor(32*d.el.currentTime/dur),0,31);if(b!==noirBarShown){noirBarShown=b;renderBar(b);}}
   }
 }
