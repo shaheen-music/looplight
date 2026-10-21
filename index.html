@@ -171,7 +171,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v59';
+const BUILD='looplight-v60';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -1823,7 +1823,7 @@ function scheduleBar(t0){
     }
   }
 
-  if((T.mode==='noir'||T.mode==='china')&&noirRec){uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
+  if((T.mode==='noir'||T.mode==='china')&&noirRec!==false){uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
   if(T.mode==='noir'){scheduleNoirBar(T,t0,bar,sec,bi,e,st,ending);uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
   if(T.mode==='china'){scheduleChinaBar(T,t0,bar,sec,bi,e,st,ending);uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
   if(T.mode==='japan'){scheduleJapanBar(T,t0,bar,sec,bi,e,st,ending);uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
@@ -1928,7 +1928,11 @@ function recSwap(from,to){
   if(REC[from])recSave();
   if(REC[from])recParked[from]={rec:noirRec,list:noirList,q:noirQ};
   const p=recParked[to]||{rec:null,list:[],q:[]};noirRec=p.rec;noirList=p.list;noirQ=p.q;noirProbing=null;
-  if(noirDecks){noirDecks.forEach(d=>{try{d.el.pause();}catch(e){}d.idx=-1;d.el.removeAttribute('src');try{d.el.load();}catch(e){}d.g.gain.cancelScheduledValues(0);d.g.gain.value=0;});noirAct=0;noirXf=false;}
+  if(noirDecks){
+    const old=noirDecks,n=ac?ac.currentTime:0;noirDecks=null;noirAct=0;noirXf=false;
+    old.forEach(d=>{d.dead=true;try{noirFade(d.g.gain,Math.max(0.0001,d.g.gain.value),0,n,0.35);}catch(e){}});
+    setTimeout(()=>old.forEach(d=>{try{d.el.pause();d.el.removeAttribute('src');d.el.load();}catch(e){}}),450);
+  }
 }
 function noirProbe(){
   if(noirRec!==null)return Promise.resolve();
@@ -1985,10 +1989,10 @@ function noirSetup(){
   if(noirDecks||!ac)return;
   noirDecks=[0,1].map(()=>{const el=new Audio();el.preload='auto';el.crossOrigin='anonymous';const g=ac.createGain();g.gain.value=0;ac.createMediaElementSource(el).connect(g);g.connect(master);return {el:el,g:g,idx:-1};});
   noirDecks.forEach((d,i)=>{
-    ['loadedmetadata','playing','seeked'].forEach(ev=>d.el.addEventListener(ev,()=>{if(i===noirAct)recMedia();}));
-    d.el.addEventListener('timeupdate',()=>{if(i===noirAct){const n=Date.now();if(n-recPosAt>4000){recPosAt=n;recMedia();recSave();}}if(i===noirAct&&!noirXf&&playing&&isFinite(d.el.duration)&&d.el.duration-d.el.currentTime<6)noirCross();});
-    d.el.addEventListener('ended',()=>{if(i===noirAct&&!noirXf&&playing)noirAdvance();});
-    d.el.addEventListener('error',()=>{if(i===noirAct&&playing&&d.idx>=0){noirList=noirList.filter(x=>x!==d.idx);noirQ=noirQ.filter(x=>x!==d.idx);d.idx=-1;if(noirList.length)noirAdvance();else{noirRec=false;nextNow();}}});
+    ['loadedmetadata','playing','seeked'].forEach(ev=>d.el.addEventListener(ev,()=>{if(!d.dead&&i===noirAct)recMedia();}));
+    d.el.addEventListener('timeupdate',()=>{if(d.dead)return;if(i===noirAct){const n=Date.now();if(n-recPosAt>4000){recPosAt=n;recMedia();recSave();}}if(i===noirAct&&!noirXf&&playing&&isFinite(d.el.duration)&&d.el.duration-d.el.currentTime<6)noirCross();});
+    d.el.addEventListener('ended',()=>{if(d.dead)return;if(i===noirAct&&!noirXf&&playing)noirAdvance();});
+    d.el.addEventListener('error',()=>{if(d.dead)return;if(i===noirAct&&playing&&d.idx>=0){noirList=noirList.filter(x=>x!==d.idx);noirQ=noirQ.filter(x=>x!==d.idx);d.idx=-1;if(noirList.length)noirAdvance();else{noirRec=false;nextNow();}}});
   });
 }
 /* each recording gets its own steady, nice-looking name (the same track always has the same one) */
@@ -2175,9 +2179,16 @@ function renderFlips(){
 }
 /* on a side that plays recordings, check for them straight away so the screen shows the recorded version, not a generated tune */
 function recShow(){const m=mode;noirProbe().then(()=>{if(mode===m&&recMode()&&noirRec){noirUi();$('upnext').innerHTML='';}});}
+/* glide the generated tune that is playing out, at once */
+function fadeLive(){
+  if(!ac)return;const now=ac.currentTime;
+  live.forEach(T=>{try{holdGain(T.bus.gain,now);T.bus.gain.setTargetAtTime(0,now,0.25);holdGain(T.dbus.gain,now);T.dbus.gain.setTargetAtTime(0,now,0.25);}catch(e){}});
+  live.length=0;uiQ.length=0;mediaGen++;
+}
 function switchModeCore(m){
   recSwap(mode,m);
   mode=m;nextTune=null;const cfg=MODES[m];
+  if(REC[m]&&started&&ac){fadeLive();tune=compose(tune.keyPc,null,m);barNum=0;shown=null;}
   document.documentElement.dataset.mode=m;
   $('appName').textContent='Looplight';$('tagline').textContent=FLIP_NAME[mode];renderFlips();
   labEls.forEach((l,i)=>{l.textContent=cfg.plan[i];});
@@ -2187,7 +2198,7 @@ function switchModeCore(m){
   if(REC[m]){if(playing)noirEnter();else recShow();}else noirStop();
   saveSettings();renderAmbVols();
 }
-function setMode(m){if(m===mode||MODE_ORDER.indexOf(m)<0)return;switchModeCore(m);nextNow();}
+function setMode(m){if(m===mode||MODE_ORDER.indexOf(m)<0)return;switchModeCore(m);if(!REC[m])nextNow();}
 let flipping=false;
 function flipCard(to){
   if(MODE_ORDER.indexOf(to)<0||to===mode)to=MODE_ORDER[(MODE_ORDER.indexOf(mode)+1)%MODE_ORDER.length];
