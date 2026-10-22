@@ -18,6 +18,6 @@ Jazz Noir plays the recordings in `audio/jazz-noir/` (`noir-01.mp3` ... `noir-40
 
 The Japanese Classical side (switched off for now, the code is kept) plays real Tsugaru-jamisen pieces (Tsugaru Jonkara Kyūbushi, Kuroishi Yosare Bushi, Tsugaru Jinku, Tsugaru Shiogama Jinku, Yasaburō Bushi, Kokiriko Bushi). The note data embedded in `index.html` comes from the transcriptions in [threedaymonk/tsugaru](https://github.com/threedaymonk/tsugaru) (shamisen.space), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). That data is therefore shared under the same licence. The sound itself is synthesized by the app.
 
-## Space background
+## Space view
 
-In Cozy and Sunny Side a small star button (top right) turns on a looping star-field video behind the page. It starts at a random point and is randomly mirrored each time. Off by default; your choice is remembered. The video is `video/space.mp4` (about 1.3 MB).
+In Cozy and Sunny Side a small star button at the bottom right opens a full-screen looping star-field video over the whole app; the close button (or Escape) brings you back. It starts at a random point and is randomly mirrored each time. The music keeps playing. The video is `video/space.mp4` (about 1.3 MB).
