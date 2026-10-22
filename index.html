@@ -66,8 +66,9 @@ h1{margin:0;font:400 clamp(1.2rem,1.05rem + 1vw,1.6rem)/1.15 var(--f-display);le
 html:not([data-mode="cozy"]):not([data-mode="groove"]) .starbtn,html:not([data-mode="cozy"]):not([data-mode="groove"]) #spaceView{display:none}
 #spaceView{position:fixed;inset:0;z-index:100;background:#000;opacity:0;visibility:hidden;transition:opacity .6s,visibility 0s .6s}
 #spaceView.open{opacity:1;visibility:visible;transition:opacity .6s}
+.spaceclose.show{opacity:1;pointer-events:auto}
 #spaceVid{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
-.spaceclose{position:absolute;top:max(14px,env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right));width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.28);background:rgba(0,0,0,.45);color:#fff;display:inline-flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
+.spaceclose{opacity:0;pointer-events:none;transition:opacity .35s;position:absolute;top:max(14px,env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right));width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.28);background:rgba(0,0,0,.45);color:#fff;display:inline-flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
 .offbtn+.offbtn{margin-left:6px}
 .offbtn[disabled]{opacity:.7;cursor:default}
 
@@ -180,7 +181,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v62';
+const BUILD='looplight-v63';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -2197,17 +2198,19 @@ function fadeLive(){
 /* space view: a star button (Cozy and Sunny Side only) opens a full-screen looping star-field video over everything; the close button (or Escape) returns to the app. Random start point and random mirror each time it opens. Music keeps playing. */
 const spaceView=$('spaceView'),spaceVid=$('spaceVid'),starBtn=$('starBtn');let spaceOpen=false;
 function spaceShow(on){
-  spaceOpen=on;spaceView.classList.toggle('open',on);spaceView.setAttribute('aria-hidden',on?'false':'true');
+  spaceOpen=on;closeBtn(false);spaceView.classList.toggle('open',on);spaceView.setAttribute('aria-hidden',on?'false':'true');
   if(on){
     if(!spaceVid.getAttribute('src'))spaceVid.src='video/space.mp4';
     spaceVid.loop=true;spaceVid.style.transform=Math.random()<.5?'scaleX(-1)':'none';
     const go=()=>{try{if(isFinite(spaceVid.duration))spaceVid.currentTime=Math.random()*spaceVid.duration;}catch(e){}const p=spaceVid.play();if(p&&p.catch)p.catch(()=>{});};
     if(spaceVid.readyState>0)go();else{spaceVid.addEventListener('loadedmetadata',go,{once:true});const p=spaceVid.play();if(p&&p.catch)p.catch(()=>{});}
-    $('spaceClose').focus({preventScroll:true});
   }else{try{spaceVid.pause();}catch(e){}starBtn.focus({preventScroll:true});}
 }
 starBtn.addEventListener('click',()=>spaceShow(true));
-$('spaceClose').addEventListener('click',()=>spaceShow(false));
+let closeT=0;
+function closeBtn(on){const b=$('spaceClose');clearTimeout(closeT);b.classList.toggle('show',on);if(on)closeT=setTimeout(()=>b.classList.remove('show'),3500);}
+spaceView.addEventListener('click',()=>closeBtn(!$('spaceClose').classList.contains('show')));
+$('spaceClose').addEventListener('click',e=>{e.stopPropagation();spaceShow(false);});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&spaceOpen)spaceShow(false);});
 document.addEventListener('visibilitychange',()=>{if(spaceOpen){if(document.hidden)spaceVid.pause();else{const p=spaceVid.play();if(p&&p.catch)p.catch(()=>{});}}});
 spaceVid.addEventListener('error',()=>{if(spaceOpen)spaceShow(false);});
