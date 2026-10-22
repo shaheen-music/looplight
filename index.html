@@ -61,6 +61,15 @@ h1{margin:0;font:400 clamp(1.2rem,1.05rem + 1vw,1.6rem)/1.15 var(--f-display);le
 .status b{font-weight:500;color:var(--lamp)}
 .offbtn{display:none;font:400 .66rem/1 var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:none;border:1px solid var(--line);border-radius:999px;padding:5px 10px;margin:.2rem 0 .4rem;cursor:pointer}
 .offbtn.on{display:inline-block}
+.starbtn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border-radius:50%;border:1px solid var(--line);background:none;color:var(--muted);cursor:pointer}
+.starbtn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
+.starbtn[aria-pressed="true"]{color:var(--lamp);border-color:var(--lamp);background:var(--lamp-soft)}
+.starbtn[aria-pressed="true"] svg{fill:currentColor}
+html:not([data-mode="cozy"]):not([data-mode="groove"]) .starbtn,html:not([data-mode="cozy"]):not([data-mode="groove"]) #spaceVid{display:none}
+#spaceVid{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1;opacity:0;transition:opacity .8s;pointer-events:none;background:var(--bg)}
+html.space-on #spaceVid{opacity:1}
+html.space-on body{background:transparent}
+html.space-on{background:var(--bg)}
 .offbtn+.offbtn{margin-left:6px}
 .offbtn[disabled]{opacity:.7;cursor:default}
 
@@ -116,10 +125,11 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 @media (prefers-reduced-motion:reduce){.btn,.tick{transition:none}}
 </style>
 
+<video id="spaceVid" muted playsinline preload="none" aria-hidden="true" tabindex="-1"></video>
 <main class="wrap">
   <header class="top">
     <div class="titlebox"><h1 id="appName">Looplight</h1><p class="tagline" id="tagline">Cozy</p></div>
-    <div class="topright"><p class="status" id="status">Ready</p><span class="flips" id="flips"></span></div>
+    <div class="topright"><p class="status" id="status">Ready</p><span class="flips" id="flips"></span><button class="starbtn" id="starBtn" type="button" aria-label="Space background" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.75 6.1 6.65.7-4.97 4.5 1.4 6.5L12 17.2l-5.83 3.4 1.4-6.5L2.6 9.6l6.65-.7z"/></svg></button></div>
   </header>
 
   <section class="scene"><canvas id="scene" role="img" aria-label="An animated scene that moves with the music: a rainy night window in Cozy mode, a sunny golden-hour hillside in Sunny Side mode, a moonlit Japanese garden with a pagoda and falling cherry petals in Japanese Classical mode."></canvas></section>
@@ -171,7 +181,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v60';
+const BUILD='looplight-v61';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -2185,6 +2195,24 @@ function fadeLive(){
   live.forEach(T=>{try{holdGain(T.bus.gain,now);T.bus.gain.setTargetAtTime(0,now,0.25);holdGain(T.dbus.gain,now);T.dbus.gain.setTargetAtTime(0,now,0.25);}catch(e){}});
   live.length=0;uiQ.length=0;mediaGen++;
 }
+/* optional space background: a looping star-field video behind the page, Cozy and Sunny Side only; starts at a random point, randomly mirrored; the choice is remembered */
+const spaceVid=$('spaceVid'),starBtn=$('starBtn');let spaceOn=false,spaceInit=false;
+try{spaceOn=localStorage.getItem('looplight.space')==='1';}catch(e){}
+function spaceSync(){
+  const ok=spaceOn&&(mode==='cozy'||mode==='groove')&&!document.hidden;
+  document.documentElement.classList.toggle('space-on',spaceOn&&(mode==='cozy'||mode==='groove'));
+  starBtn.setAttribute('aria-pressed',spaceOn?'true':'false');
+  if(ok){
+    if(!spaceVid.getAttribute('src'))spaceVid.src='video/space.mp4';
+    if(!spaceInit){spaceInit=true;spaceVid.loop=true;spaceVid.style.transform=Math.random()<.5?'scaleX(-1)':'none';
+      const go=()=>{try{if(isFinite(spaceVid.duration))spaceVid.currentTime=Math.random()*spaceVid.duration;}catch(e){}};
+      if(spaceVid.readyState>0)go();else spaceVid.addEventListener('loadedmetadata',go,{once:true});}
+    const p=spaceVid.play();if(p&&p.catch)p.catch(()=>{});
+  }else if(spaceVid.getAttribute('src')){try{spaceVid.pause();}catch(e){}}
+}
+starBtn.addEventListener('click',()=>{spaceOn=!spaceOn;try{localStorage.setItem('looplight.space',spaceOn?'1':'0');}catch(e){}spaceSync();});
+document.addEventListener('visibilitychange',spaceSync);
+spaceVid.addEventListener('error',()=>{document.documentElement.classList.remove('space-on');});
 function switchModeCore(m){
   recSwap(mode,m);
   mode=m;nextTune=null;const cfg=MODES[m];
@@ -2196,7 +2224,7 @@ function switchModeCore(m){
   flies.length=0;
   if(ac){applyLite();applyTexture();}
   if(REC[m]){if(playing)noirEnter();else recShow();}else noirStop();
-  saveSettings();renderAmbVols();
+  saveSettings();renderAmbVols();spaceSync();
 }
 function setMode(m){if(m===mode||MODE_ORDER.indexOf(m)<0)return;switchModeCore(m);if(!REC[m])nextNow();}
 let flipping=false;
