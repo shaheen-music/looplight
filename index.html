@@ -181,7 +181,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v63';
+const BUILD='looplight-v64';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -2200,10 +2200,11 @@ const spaceView=$('spaceView'),spaceVid=$('spaceVid'),starBtn=$('starBtn');let s
 function spaceShow(on){
   spaceOpen=on;closeBtn(false);spaceView.classList.toggle('open',on);spaceView.setAttribute('aria-hidden',on?'false':'true');
   if(on){
-    if(!spaceVid.getAttribute('src'))spaceVid.src='video/space.mp4';
+    const want=innerWidth>innerHeight*1.1?'video/space-wide.mp4':'video/space.mp4';
+    if(spaceVid.getAttribute('src')!==want){spaceVid.src=want;}
     spaceVid.loop=true;spaceVid.style.transform=Math.random()<.5?'scaleX(-1)':'none';
     const go=()=>{try{if(isFinite(spaceVid.duration))spaceVid.currentTime=Math.random()*spaceVid.duration;}catch(e){}const p=spaceVid.play();if(p&&p.catch)p.catch(()=>{});};
-    if(spaceVid.readyState>0)go();else{spaceVid.addEventListener('loadedmetadata',go,{once:true});const p=spaceVid.play();if(p&&p.catch)p.catch(()=>{});}
+    if(spaceVid.readyState>0&&isFinite(spaceVid.duration))go();else{spaceVid.addEventListener('loadedmetadata',go,{once:true});const p=spaceVid.play();if(p&&p.catch)p.catch(()=>{});}
   }else{try{spaceVid.pause();}catch(e){}starBtn.focus({preventScroll:true});}
 }
 starBtn.addEventListener('click',()=>spaceShow(true));

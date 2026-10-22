@@ -20,4 +20,4 @@ The Japanese Classical side (switched off for now, the code is kept) plays real 
 
 ## Space view
 
-In Cozy and Sunny Side a small star button at the bottom right opens a full-screen looping star-field video over the whole app; the close button (or Escape) brings you back. It starts at a random point and is randomly mirrored each time. The music keeps playing. The video is `video/space.mp4` (about 1.3 MB).
+In Cozy and Sunny Side a small star button at the bottom right opens a full-screen looping star-field video over the whole app; the close button (or Escape) brings you back. It starts at a random point and is randomly mirrored each time. The music keeps playing. Phones get `video/space.mp4` (about 1.3 MB, portrait); wide screens such as desktops get `video/space-wide.mp4` (about 6 MB, 1600x900) so it stays sharp full screen.
