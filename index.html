@@ -183,7 +183,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v75';
+const BUILD='looplight-v76';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -1859,7 +1859,7 @@ function scheduleBar(t0){
   }
   if(ending){
     [T.bus,T.dbus].forEach(b=>{b.gain.cancelScheduledValues(t0);b.gain.setValueAtTime(0.7,t0);b.gain.linearRampToValueAtTime(0.25,t0+barLen);b.gain.setTargetAtTime(0,t0+barLen,0.6);});
-    if(cfg.whoosh!==false){
+    if(false){
     const ws=ac.createBufferSource();ws.buffer=noiseBuf;
     const wf=ac.createBiquadFilter();wf.type='bandpass';wf.Q.value=0.8;wf.frequency.setValueAtTime(500,t0);wf.frequency.exponentialRampToValueAtTime(4200,t0+barLen);
     const wg=ac.createGain();wg.gain.setValueAtTime(0.0001,t0);wg.gain.exponentialRampToValueAtTime(0.1,t0+barLen*0.92);wg.gain.linearRampToValueAtTime(0,t0+barLen+0.15);
