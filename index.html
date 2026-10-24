@@ -187,7 +187,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v79';
+const BUILD='looplight-v80';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -251,11 +251,10 @@ const HATV_G=[0.7,0.35,0.55,0.4,0.7,0.35,0.55,0.5];
 const MAJOR=[0,2,4,5,7,9,11],MINOR=[0,2,3,5,7,8,10];
 /* one chord per bar, four bars; degrees stack in thirds so every chord is a proper seventh chord */
 const PROG_MAJOR=[[0,5,1,4],[1,4,0,5],[0,3,2,5],[0,2,3,4],[5,3,0,4],[2,5,1,4],[0,3,1,4],[3,2,1,0],[5,1,4,0],[1,4,2,5],[0,4,5,3],[3,4,2,5],[0,5,3,4],[0,1,3,4]];
-/* Night Drive flavours: the original C-minor sound (m5), a faster D-minor one with a sawtooth arpeggio (m2), and an Andalusian one (Am G F E) with string pad, square lead and a four-on-the-floor kick (m4) */
+/* Night Drive flavours: the original C-minor sound (m5), a faster D-minor one with a sawtooth arpeggio (m2) */
 const DSTYLE={
   m5:{sfx:'d',bpm:[86,92],snd:{pad:'dpad',arp:'dcry',bass:'dbas',lead:'dlead'},arp:'bounce',b16:false,kick:[0,4],name:'Synth pad, arpeggio & lead'},
-  m2:{sfx:'e',bpm:[90,96],snd:{pad:'dpad',arp:'dsaw',bass:'dbas',lead:'dl87'},arp:'bounce',b16:false,kick:[0,4],prog:[0,5,2,6],name:'Saw arpeggio & lead'},
-  m4:{sfx:'f',bpm:[92,98],snd:{pad:'dstr',arp:'dsaw',bass:'dsyb',lead:'dsq'},arp:'up',b16:true,kick:[0,2,4,6],name:'Andalusian strings & square lead'}
+  m2:{sfx:'e',bpm:[90,96],snd:{pad:'dpad',arp:'dsaw',bass:'dbas',lead:'dl87'},arp:'bounce',b16:false,kick:[0,4],prog:[0,5,2,6],name:'Saw arpeggio & lead'}
 };
 const PROG_D=[[0,5,2,6],[0,5,2,6],[0,5,2,6],[0,6,5,6],[0,5,3,6],[0,3,5,6],[0,5,2,4]];
 const PROG_MINOR=[[0,5,2,6],[0,3,6,2],[0,6,5,6],[0,3,0,4],[0,6,3,5],[0,5,3,4],[1,4,0,0],[3,6,2,5],[0,2,5,6],[0,3,4,0],[5,6,0,0]];
@@ -316,10 +315,10 @@ function varyPhrase(T,P){
 }
 const KEYS=[0,2,3,5,7,9,10];
 function parseCode(str){
-  const m=/^\s*([0-9a-z]{1,8})\s*[-\s]\s*([0-6])\s*([gjnscdef]?)\s*$/i.exec(str||'');
+  const m=/^\s*([0-9a-z]{1,8})\s*[-\s]\s*([0-6])\s*([gjnscde]?)\s*$/i.exec(str||'');
   const sf=m&&m[3]?m[3].toLowerCase():'';
   if(m&&/^[jst]$/i.test(m[3]||''))return null;
-  return m?{seed:parseInt(m[1],36),ki:+m[2],mode:sf==='g'?'groove':(sf==='d'||sf==='e'||sf==='f')?'drive':(sf==='j'||sf==='s'||sf==='t')?'japan':sf==='n'?'noir':sf==='c'?'china':'cozy',style:sf==='s'?'sham':sf==='t'?'tsu':'koto',dstyle:sf==='e'?'m2':sf==='f'?'m4':'m5',text:m[1].toLowerCase()+'-'+m[2]+sf}:null;
+  return m?{seed:parseInt(m[1],36),ki:+m[2],mode:sf==='g'?'groove':(sf==='d'||sf==='e')?'drive':(sf==='j'||sf==='s'||sf==='t')?'japan':sf==='n'?'noir':sf==='c'?'china':'cozy',style:sf==='s'?'sham':sf==='t'?'tsu':'koto',dstyle:sf==='e'?'m2':'m5',text:m[1].toLowerCase()+'-'+m[2]+sf}:null;
 }
 /* each new Cozy or Sunny Side tune is picked to differ from the one before it in at least three ways (chords, drums, bass, accompaniment, chord colour, lead sound, major/minor) while keeping the tempo within 3 BPM of it, so the pace stays steady; a saved tune code still replays exactly */
 const lastSig={};
@@ -347,7 +346,7 @@ function composeInner(prevPc,fixed,seed,m){
   if(fixed)ki=fixed.ki;else if(KEYS[ki]===prevPc)ki=(ki+1)%7;
   const keyPc=KEYS[ki];
   const iv=minor?MINOR:MAJOR,root=48+keyPc;
-  const DS=m==='drive'?(fixed?(fixed.dstyle||'m5'):(window.__DSTYLE||(()=>{const r=Math.random();return r<0.4?'m5':r<0.7?'m2':'m4';})())):null,DC=DS?DSTYLE[DS]:null;
+  const DS=m==='drive'?(fixed?(fixed.dstyle||'m5'):(window.__DSTYLE||(()=>{const r=Math.random();return r<0.55?'m5':'m2';})())):null,DC=DS?DSTYLE[DS]:null;
   let prog=window.__PROG||(m==='drive'?pick(PROG_D):pick(G?(minor?PROG_G_MINOR:PROG_G_MAJOR):(minor?PROG_MINOR:PROG_MAJOR)));
   /* chord colour: mostly seventh chords, sometimes added-ninth, sixth or plain triads */
   const CO=window.__CO||pick([[0,2,4,6],[0,2,4,6],[0,2,4,6],[0,2,4,8],[0,2,4,8],[0,2,4,5],[0,2,4,7]]);
@@ -362,7 +361,6 @@ function composeInner(prevPc,fixed,seed,m){
   T.chords=prog.map(d=>CO.map(o=>{let m=idxMidi(root,iv,d+o);while(m<50)m+=12;while(m>=70)m-=12;return m;}).sort((a,b)=>a-b));
   T.bass=prog.map(d=>{let m=idxMidi(root,iv,d);while(m>=55)m-=12;while(m<43)m+=12;return m;});
   T.chordPcs=prog.map(d=>new Set(CO.map(o=>pcOf(idxMidi(root,iv,d+o),keyPc))));
-  if(DS==='m4'){const AN=[[0,[0,3,7]],[-2,[0,4,7]],[-4,[0,4,7]],[-5,[0,4,7]]];T.dch=AN.map(c=>c[1].map(x=>root+c[0]+x));T.dbass=AN.map(c=>root+c[0]);T.prog=[0,6,5,4];T.chordPcs=T.dch.map(ch=>new Set(ch.map(x=>pcOf(x,keyPc))));T.chords=T.dch.map(ch=>ch.map(x=>{while(x<50)x+=12;while(x>=70)x-=12;return x;}).sort((a,b)=>a-b));T.bass=T.dbass.map(x=>{while(x>=55)x-=12;while(x<43)x+=12;return x;});}
   T.pent=minor?[0,3,5,7,10]:[0,2,4,7,9];
   T.co=CO;
   /* now and then one more note joins the scale for colour (a major seventh, or a flat sixth in minor) */
@@ -1493,10 +1491,7 @@ const SMP_CFG={
   dtr:{sus:false,a:0.008,rel:0.4,lp:2400,norm:'peak',target:0.35},
   piano:{sus:false,a:0.004,rel:0.5,norm:'peak',target:0.3},
   bass:{sus:false,a:0.006,rel:0.25,norm:'peak',target:0.4},
-  dstr:{sus:true,a:0.3,rel:0.7,norm:'rms',target:0.05},
   dsaw:{sus:false,a:0.004,rel:0.25,norm:'peak',target:0.14},
-  dsyb:{sus:true,a:0.006,rel:0.16,norm:'rms',target:0.1},
-  dsq:{sus:true,a:0.012,rel:0.25,vib:5,norm:'rms',target:0.045},
   dl87:{sus:true,a:0.01,rel:0.3,vib:5,norm:'rms',target:0.055},
   dpad:{sus:true,a:0.35,rel:0.7,norm:'rms',target:0.05},
   dcry:{sus:false,a:0.004,rel:0.25,norm:'peak',target:0.2},
@@ -1508,7 +1503,7 @@ const SMP_CFG={
 let SMP=null,loadingBand=false,smpLoad={};
 function b64buf(b){const bin=atob(b),n=bin.length,u=new Uint8Array(n);for(let i=0;i<n;i++)u[i]=bin.charCodeAt(i);return u.buffer;}
 /* each side only decodes the recordings it plays: koto, shakuhachi and taiko for Yoru, the saxophone for Jazz Noir */
-const smpWant=()=>(mode==='japan'?['koto','shaku','taiko']:mode==='noir'?(noirRec?[]:['sax','saxp','saxk','saxb','piano','bass']):mode==='china'?(noirRec?[]:['dtr','flute','erhu']):mode==='drive'?['dpad','dcry','dbas','dlead','dstr','dsaw','dsyb','dsq','dl87']:[]);
+const smpWant=()=>(mode==='japan'?['koto','shaku','taiko']:mode==='noir'?(noirRec?[]:['sax','saxp','saxk','saxb','piano','bass']):mode==='china'?(noirRec?[]:['dtr','flute','erhu']):mode==='drive'?['dpad','dcry','dbas','dlead','dsaw','dl87']:[]);
 const smpHas=i=>!!(SMP&&SMP[i]&&SMP[i].keys.length);
 const smpScript={};
 /* each instrument's recordings are their own small file, fetched the first time a side needs them (and kept for offline use) */
