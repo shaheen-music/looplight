@@ -1,6 +1,6 @@
 # Looplight
 
-Endless music in five moods: Cozy, Sunny Side, Night Drive, Jazz Noir and Scarlet Mist (a fifth, Yoru with Tsugaru shamisen and taiko, is switched off for now). Cozy, Sunny Side and Night Drive (two flavours: C minor, D minor) are generated as you listen; Jazz Noir and Scarlet Mist play recordings (Scarlet Mist falls back to its generated guzheng, flute and erhu if the recordings are missing). One page, no build step, works offline once opened.
+Endless music in five moods: Cozy, Sunny Side, Night Drive, Jazz Noir and Scarlet Mist. Cozy, Sunny Side and Night Drive (two flavours: C minor, D minor) are generated as you listen; Jazz Noir and Scarlet Mist play recordings (Scarlet Mist falls back to its generated guzheng, flute and erhu if the recordings are missing). One page, no build step, works offline once opened.
 
 Open it here: https://shaheen-music.github.io/looplight/
 
@@ -13,10 +13,6 @@ The Scarlet Mist flute and erhu (violin) notes come from the FluidR3_GM soundfon
 ## Jazz Noir recordings
 
 Jazz Noir plays the recordings in `audio/jazz-noir/` (`noir-01.mp3` ... `noir-40.mp3`): shuffled, crossfaded, endless. See `audio/jazz-noir/README.md`.
-
-## Tsugaru transcriptions
-
-The Yoru side (switched off for now, the code is kept) plays real Tsugaru-jamisen pieces (Tsugaru Jonkara Kyūbushi, Kuroishi Yosare Bushi, Tsugaru Jinku, Tsugaru Shiogama Jinku, Yasaburō Bushi, Kokiriko Bushi). The note data embedded in `index.html` comes from the transcriptions in [threedaymonk/tsugaru](https://github.com/threedaymonk/tsugaru) (shamisen.space), licensed [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). That data is therefore shared under the same licence. The sound itself is synthesized by the app.
 
 ## Space view
 
