@@ -187,7 +187,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v80';
+const BUILD='looplight-v81';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -253,9 +253,10 @@ const MAJOR=[0,2,4,5,7,9,11],MINOR=[0,2,3,5,7,8,10];
 const PROG_MAJOR=[[0,5,1,4],[1,4,0,5],[0,3,2,5],[0,2,3,4],[5,3,0,4],[2,5,1,4],[0,3,1,4],[3,2,1,0],[5,1,4,0],[1,4,2,5],[0,4,5,3],[3,4,2,5],[0,5,3,4],[0,1,3,4]];
 /* Night Drive flavours: the original C-minor sound (m5), a faster D-minor one with a sawtooth arpeggio (m2) */
 const DSTYLE={
-  m5:{sfx:'d',bpm:[86,92],snd:{pad:'dpad',arp:'dcry',bass:'dbas',lead:'dlead'},arp:'bounce',b16:false,kick:[0,4],name:'Synth pad, arpeggio & lead'},
-  m2:{sfx:'e',bpm:[90,96],snd:{pad:'dpad',arp:'dsaw',bass:'dbas',lead:'dl87'},arp:'bounce',b16:false,kick:[0,4],prog:[0,5,2,6],name:'Saw arpeggio & lead'}
+  m5:{sfx:'d',sfx2:'h',bpm:[86,92],snd:{pad:'dpad',arp:'dcry',bass:'dbas',lead:'dlead'},arp:'bounce',b16:false,kick:[0,4],name:'Synth pad, arpeggio & lead'},
+  m2:{sfx:'e',sfx2:'i',bpm:[90,96],snd:{pad:'dpad',arp:'dsaw',bass:'dbas',lead:'dl87'},arp:'bounce',b16:false,kick:[0,4],prog:[0,5,2,6],name:'Saw arpeggio & lead'}
 };
+const PROG_D2=[[0,5,2,6],[0,5,2,6],[0,5,2,6],[0,6,5,6],[0,5,3,6],[0,3,5,6],[0,5,2,4],[0,2,5,6],[0,6,2,5],[0,5,6,4],[0,3,6,5],[5,0,2,6]];
 const PROG_D=[[0,5,2,6],[0,5,2,6],[0,5,2,6],[0,6,5,6],[0,5,3,6],[0,3,5,6],[0,5,2,4]];
 const PROG_MINOR=[[0,5,2,6],[0,3,6,2],[0,6,5,6],[0,3,0,4],[0,6,3,5],[0,5,3,4],[1,4,0,0],[3,6,2,5],[0,2,5,6],[0,3,4,0],[5,6,0,0]];
 /* melody rhythms on an eighth-note grid (8 steps a bar); odd steps get the swing */
@@ -315,14 +316,14 @@ function varyPhrase(T,P){
 }
 const KEYS=[0,2,3,5,7,9,10];
 function parseCode(str){
-  const m=/^\s*([0-9a-z]{1,8})\s*[-\s]\s*([0-6])\s*([gjnscde]?)\s*$/i.exec(str||'');
+  const m=/^\s*([0-9a-z]{1,8})\s*[-\s]\s*([0-6])\s*([gjnscdehi]?)\s*$/i.exec(str||'');
   const sf=m&&m[3]?m[3].toLowerCase():'';
   if(m&&/^[jst]$/i.test(m[3]||''))return null;
-  return m?{seed:parseInt(m[1],36),ki:+m[2],mode:sf==='g'?'groove':(sf==='d'||sf==='e')?'drive':(sf==='j'||sf==='s'||sf==='t')?'japan':sf==='n'?'noir':sf==='c'?'china':'cozy',style:sf==='s'?'sham':sf==='t'?'tsu':'koto',dstyle:sf==='e'?'m2':'m5',text:m[1].toLowerCase()+'-'+m[2]+sf}:null;
+  return m?{seed:parseInt(m[1],36),ki:+m[2],mode:sf==='g'?'groove':(sf==='d'||sf==='e'||sf==='h'||sf==='i')?'drive':(sf==='j'||sf==='s'||sf==='t')?'japan':sf==='n'?'noir':sf==='c'?'china':'cozy',style:sf==='s'?'sham':sf==='t'?'tsu':'koto',dstyle:(sf==='e'||sf==='i')?'m2':'m5',v2:sf==='h'||sf==='i',text:m[1].toLowerCase()+'-'+m[2]+sf}:null;
 }
 /* each new Cozy or Sunny Side tune is picked to differ from the one before it in at least three ways (chords, drums, bass, accompaniment, chord colour, lead sound, major/minor) while keeping the tempo within 3 BPM of it, so the pace stays steady; a saved tune code still replays exactly */
 const lastSig={};
-function tuneSig(T){return {p:T.prog.join(''),d:JSON.stringify(T.drum),c:JSON.stringify(T.comp),b:JSON.stringify(T.bassPat),o:T.co.join(''),v:T.melVoice,m:T.minor,bpm:T.bpm,s:T.ds};}
+function tuneSig(T){if(T.dv)return {p:T.prog.join(''),a:T.dv.arp+T.dv.den,b:T.dv.bass,d:JSON.stringify(T.drum),x:T.dv.arps+T.dv.lead+T.dv.p7,s:T.ds,bpm:T.bpm};return {p:T.prog.join(''),d:JSON.stringify(T.drum),c:JSON.stringify(T.comp),b:JSON.stringify(T.bassPat),o:T.co.join(''),v:T.melVoice,m:T.minor,bpm:T.bpm,s:T.ds};}
 function compose(prevPc,fixed,m){
   m=fixed?fixed.mode:(m||mode);
   const mk=()=>{const seed=fixed?fixed.seed:Math.floor(Math.random()*0x7fffffff);R=mulberry(seed);try{return m==='japan'?composeJapan(prevPc,fixed,seed):m==='noir'?composeNoir(prevPc,fixed,seed):m==='china'?composeChina(prevPc,fixed,seed):composeInner(prevPc,fixed,seed,m);}finally{R=Math.random;}};
@@ -346,18 +347,20 @@ function composeInner(prevPc,fixed,seed,m){
   if(fixed)ki=fixed.ki;else if(KEYS[ki]===prevPc)ki=(ki+1)%7;
   const keyPc=KEYS[ki];
   const iv=minor?MINOR:MAJOR,root=48+keyPc;
-  const DS=m==='drive'?(fixed?(fixed.dstyle||'m5'):(window.__DSTYLE||(()=>{const r=Math.random();return r<0.55?'m5':'m2';})())):null,DC=DS?DSTYLE[DS]:null;
+    const V2=m==='drive'&&(!fixed||fixed.v2);
+  const DS=m==='drive'?(V2?'m5':(fixed?(fixed.dstyle||'m5'):'m5')):null,DC=DS?DSTYLE[DS]:null;
+  const RV=V2?mulberry((seed^0x5bd1e995)>>>0):null,rv=a=>a[Math.floor(RV()*a.length)];
   let prog=window.__PROG||(m==='drive'?pick(PROG_D):pick(G?(minor?PROG_G_MINOR:PROG_G_MAJOR):(minor?PROG_MINOR:PROG_MAJOR)));
   /* chord colour: mostly seventh chords, sometimes added-ninth, sixth or plain triads */
   const CO=window.__CO||pick([[0,2,4,6],[0,2,4,6],[0,2,4,6],[0,2,4,8],[0,2,4,8],[0,2,4,5],[0,2,4,7]]);
   const T={
-    mode:m,code:seed.toString(36)+'-'+ki+(m==='drive'?DC.sfx:G?'g':''),name:pick(cfg.adj)+' '+pick(cfg.noun),minor:minor,keyPc:keyPc,iv:iv,root:root,prog:prog,
-    bpm:DC?DC.bpm[0]+Math.round(rnd(cfg.bpm[1]-cfg.bpm[0]+1)/(cfg.bpm[1]-cfg.bpm[0])*(DC.bpm[1]-DC.bpm[0])):cfg.bpm[0]+rnd(cfg.bpm[1]-cfg.bpm[0]+1),swing:rr(cfg.swing[0],cfg.swing[1]),
+    mode:m,code:seed.toString(36)+'-'+ki+(m==='drive'?(V2?DC.sfx2:DC.sfx):G?'g':''),name:pick(cfg.adj)+' '+pick(cfg.noun),minor:minor,keyPc:keyPc,iv:iv,root:root,prog:prog,
+    bpm:DC?(V2?86:DC.bpm[0])+Math.round(rnd(cfg.bpm[1]-cfg.bpm[0]+1)/(cfg.bpm[1]-cfg.bpm[0])*((V2?96:DC.bpm[1])-(V2?86:DC.bpm[0]))):cfg.bpm[0]+rnd(cfg.bpm[1]-cfg.bpm[0]+1),swing:rr(cfg.swing[0],cfg.swing[1]),
     melVoice:pick(cfg.voices),
     drum:(G?DRUMS_G:DRUMS)[pick(['A','B','C','D','E','F'])],comp:pick(G?COMP_G:COMP),bassPat:pick(G?BASSPAT_G:BASSPAT),
     bus:null,dbus:null
   };
-  if(m==='drive'){T.drum={k:DC.kick,r:[2,6]};T.ds=DS;T.dc=DC;if(DC.prog)T.prog=prog=DC.prog;}
+  if(m==='drive'){T.drum={k:DC.kick,r:[2,6]};T.ds=DS;T.dc=DC;if(V2){T.prog=prog=rv(PROG_D2);T.dv={arp:rv(['bounce','bounce','up','down','broken']),den:RV()<0.78?16:8,bass:rv(['eighths','eighths','eighths','sync','long','sixteenth']),arps:rv(['dcry','dcry','dsaw']),lead:rv(['dlead','dlead','dl87']),p7:RV()<0.4};const DR=rv([{k:[0,4],r:[2,6]},{k:[0,4],r:[2,6]},{k:[0,4],r:[2,6]},{k:[0,3,4],r:[2,6]},{k:[0,4,7],r:[2,6]},{k:[0,5],r:[4]},{k:[0,2,4,6],r:[2,6]}]);T.drum=DR;}else if(DC.prog)T.prog=prog=DC.prog;}
   T.chords=prog.map(d=>CO.map(o=>{let m=idxMidi(root,iv,d+o);while(m<50)m+=12;while(m>=70)m-=12;return m;}).sort((a,b)=>a-b));
   T.bass=prog.map(d=>{let m=idxMidi(root,iv,d);while(m>=55)m-=12;while(m<43)m+=12;return m;});
   T.chordPcs=prog.map(d=>new Set(CO.map(o=>pcOf(idxMidi(root,iv,d+o),keyPc))));
@@ -1989,7 +1992,7 @@ function scheduleBar(t0){
 }
 /* Night Drive: a warm synth pad holds each chord, a crystal arpeggio runs in sixteenths over it, a synth bass pulses in eighths and a lead sings the tune over a steady kick, snare and hats; every tune picks its own key, chords and melody */
 function scheduleDriveBar(T,t0,bar,sec,bi,e,st,ending,dropOut){
-  const cfg=MODES.drive,hum=()=>(Math.random()-0.5)*0.012,D=T.dc,sn=D.snd;
+  const cfg=MODES.drive,hum=()=>(Math.random()-0.5)*0.012,D=T.dc,V=T.dv,sn=V?{pad:D.snd.pad,arp:V.arps,bass:D.snd.bass,lead:V.lead}:D.snd;
   let tri,rb;
   if(T.dch){
     tri=T.dch[bi].map(m=>{while(m<50)m+=12;while(m>=66)m-=12;return m;}).sort((a,b)=>a-b);
@@ -1999,13 +2002,18 @@ function scheduleDriveBar(T,t0,bar,sec,bi,e,st,ending,dropOut){
     rb=idxMidi(T.root,T.iv,T.prog[bi]);while(rb>=40)rb-=12;while(rb<28)rb+=12;
   }
   tri.forEach(m=>playSample(sn.pad,t0+hum(),m,0.5,e*8,bus));
+  if(V&&V.p7){let m7=idxMidi(T.root,T.iv,T.prog[bi]+6);while(m7<52)m7+=12;while(m7>=68)m7-=12;playSample(sn.pad,t0+hum(),m7,0.34,e*8,bus);}
   playSample(sn.pad,t0,tri[0]-12,0.4,e*8,bus);
   if(!S.lite&&(sec>0||bi>=2)){
-    const seq=D.arp==='up'?[tri[0],tri[1],tri[2],tri[1]+12,tri[2],tri[1],tri[0]+12,tri[1]]:[tri[0],tri[2],tri[1],tri[2]+12,tri[0]+12,tri[2],tri[1],tri[0]];
-    for(let k=0;k<16;k++)playSample(sn.arp,st(k*0.5)+hum(),seq[k%8]+(((k>>3)&1)?12:0),k%4===0?0.62:0.42,0.2,bus);
+    const ak=V?V.arp:D.arp,seq=ak==='up'?[tri[0],tri[1],tri[2],tri[1]+12,tri[2],tri[1],tri[0]+12,tri[1]]:ak==='down'?[tri[2]+12,tri[1]+12,tri[0]+12,tri[2],tri[1]+12,tri[0]+12,tri[2],tri[1]]:ak==='broken'?[tri[0],tri[1],tri[2],tri[1],tri[0]+12,tri[2],tri[1],tri[2]]:[tri[0],tri[2],tri[1],tri[2]+12,tri[0]+12,tri[2],tri[1],tri[0]];
+    if(V&&V.den===8){for(let k=0;k<8;k++)playSample(sn.arp,st(k)+hum(),seq[k]+((k&4)?12:0),k%2===0?0.62:0.44,0.34,bus);}
+    else for(let k=0;k<16;k++)playSample(sn.arp,st(k*0.5)+hum(),seq[k%8]+(((k>>3)&1)?12:0),k%4===0?0.62:0.42,0.2,bus);
   }
   if(bar>=1&&!dropOut){
-    if(D.b16)for(let k=0;k<16;k++)playSample(sn.bass,st(k*0.5)+hum()*0.5,rb+(((k%8)===3||(k%8)===6)?12:0),k%4===0?0.95:0.7,e*0.45,bus);
+    const bm=V?V.bass:'eighths';
+    if(bm==='long'){playSample(sn.bass,t0+hum()*0.5,rb,0.95,e*3.6,bus);playSample(sn.bass,st(4)+hum()*0.5,rb+(bi%2?12:0),0.8,e*3.6,bus);}
+    else if(bm==='sync'){[0,3,4,6,7].forEach((k,i)=>playSample(sn.bass,st(k)+hum()*0.5,rb+(k===3||k===6?12:0),i%2===0?0.95:0.75,e*0.9,bus));}
+    else if(bm==='sixteenth'||D.b16)for(let k=0;k<16;k++)playSample(sn.bass,st(k*0.5)+hum()*0.5,rb+(((k%8)===3||(k%8)===6)?12:0),k%4===0?0.95:0.7,e*0.45,bus);
     else for(let k=0;k<8;k++)playSample(sn.bass,st(k)+hum()*0.5,rb+((k===3||k===6)?12:0),k%2===0?0.95:0.72,e*0.9,bus);
   }
   const pk=PLAN[sec].ph,ph=pk?T[pk]:(sec===0&&bi>=2?T.A:null);
