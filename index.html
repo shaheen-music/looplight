@@ -183,7 +183,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v73';
+const BUILD='looplight-v74';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -1938,7 +1938,7 @@ document.addEventListener('visibilitychange',()=>{if(playing&&document.visibilit
    If full recordings are in audio/jazz-noir/ (noir-01.mp3 ... noir-30.mp3), Jazz Noir plays them, shuffled and crossfaded, forever.
    With none there, it falls back to the generated sax band. */
 /* Scarlet Mist plays recordings the same way (audio/silk-bamboo/s64-01.mp3 ...). The state below is always the current side's; it is parked and restored when the side changes. */
-const REC={noir:{dir:'audio/jazz-noir/noir-',max:66,mb:2.6,title:'Jazz Noir',meta:'Tenor sax, piano, bass & brushes'},drive:{dir:'audio/night-drive/drive-',max:18,mb:2.2,title:'Night Drive',meta:'Synths, drum machine & bass'},china:{dir:'audio/silk-bamboo/s64-',max:42,mb:3.4,title:'Scarlet Mist',meta:'Guzheng, flute & erhu'}};
+const REC={noir:{dir:'audio/jazz-noir/noir-',max:66,mb:2.6,title:'Jazz Noir',meta:'Tenor sax, piano, bass & brushes'},drive:{dir:'audio/night-drive/nd2-',max:18,mb:2.2,title:'Night Drive',meta:'Synths, drum machine & bass'},china:{dir:'audio/silk-bamboo/s64-',max:42,mb:3.4,title:'Scarlet Mist',meta:'Guzheng, flute & erhu'}};
 const recMode=()=>!!REC[mode];
 const NOIR_MAX=66,noirPath=i=>REC[mode].dir+String(i+1).padStart(2,'0')+'.mp3';
 let noirRec=null,noirList=[],noirProbing=null,noirDecks=null,noirAct=0,noirQ=[],noirXf=false,noirNo=0;
