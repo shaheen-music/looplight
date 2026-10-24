@@ -34,6 +34,7 @@
 }
 html[data-mode="japan"]{--bg:#0c0e1e;--surface:#141830;--surface-2:#1e2442;--line:#313a5e;--fg:#f3ece4;--muted:#a3a7c2;--lamp:#f0a2b3;--lamp-ink:#2a0d16;--lamp-soft:rgba(240,162,179,.14);--lamp-rgb:240,162,179;--past:#444f7a}
 html[data-mode="noir"]{--bg:#0a1119;--surface:#111b27;--surface-2:#1a2836;--line:#2a3b4d;--fg:#f1e8dc;--muted:#9aa9b8;--lamp:#7fb8d6;--lamp-ink:#06202e;--lamp-soft:rgba(127,184,214,.14);--lamp-rgb:127,184,214;--past:#364a5e}
+html[data-mode="drive"]{--bg:#0c0720;--surface:#150d33;--surface-2:#20134a;--line:#3a2470;--fg:#f3eaff;--muted:#a99bd0;--lamp:#ff5fb8;--lamp-ink:#2a0620;--lamp-soft:rgba(255,95,184,.15);--lamp-rgb:255,95,184;--past:#4a3a78}
 html[data-mode="china"]{--bg:#150a0c;--surface:#241214;--surface-2:#321a1b;--line:#4d2c2b;--fg:#f6ece0;--muted:#b9a39a;--lamp:#ee6c4d;--lamp-ink:#2b0d07;--lamp-soft:rgba(238,108,77,.15);--lamp-rgb:238,108,77;--past:#5e3a36}
 html[data-mode="groove"]{--bg:#0e1a17;--surface:#15251f;--surface-2:#1e352b;--line:#2e4a3c;--fg:#f4f0e2;--muted:#9fb7a8;--lamp:#b9e38c;--lamp-ink:#142208;--lamp-soft:rgba(185,227,140,.15);--lamp-rgb:185,227,140;--past:#3f6150}
 *{box-sizing:border-box}
@@ -46,6 +47,7 @@ html:not([data-mode="japan"]):not([data-mode="china"]) .jc{display:none}
 .flipbtn{min-height:28px;padding:.22rem .6rem;font-size:.7rem}
 .flipbtn[data-to="groove"]{--lamp:#b9e38c;--lamp-soft:rgba(185,227,140,.15)}
 .flipbtn[data-to="japan"]{--lamp:#f0a2b3;--lamp-soft:rgba(240,162,179,.14)}
+.flipbtn[data-to="drive"]{--lamp:#ff5fb8;--lamp-soft:rgba(255,95,184,.15)}
 .flipbtn[data-to="china"]{--lamp:#ee6c4d;--lamp-soft:rgba(238,108,77,.15)}
 .flipbtn[data-to="noir"]{--lamp:#7fb8d6;--lamp-soft:rgba(127,184,214,.14)}
 .flipbtn[data-to="cozy"]{--lamp:#ffb45a;--lamp-soft:rgba(255,180,90,.16)}
@@ -181,7 +183,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v72';
+const BUILD='looplight-v73';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -212,6 +214,11 @@ const MODES={
     plan:['Jo','Ha','Ha 2','Kyu','Kyu 2','Return','Variation','Coda'],
     adj:['Quiet','Autumn','Moonlit','Misty','Silent','Distant','Willow','Winter','Morning','Gentle','Falling','Stone'],
     noun:['Sakura','Temple','Garden','Crane','Lantern','Bamboo','Pond','Mountain','Koto','Teahouse','Moon','River']},
+  drive:{title:'Night Drive',tagline:'Synths · neon road · after midnight',flipTo:'Flip to Cozy',bpm:[88,104],swing:[0,0.04],minorP:1,
+    voices:['synth','pluck'],trim:1.15,reverb:0.5,tone:6000,hatFrom:0,kickFrom:0,hatMul:1.2,kickV:1.1,snare:true,ghost:false,bassDur:[2.2,1.5],
+    plan:['Intro','Drive','Drive 2','Break','Break 2','Return','Variation','Outro'],
+    adj:['Neon','Midnight','Chrome','Velvet','Electric','Violet','Last','Endless','Silent','Fading','Pink','Distant','Hollow','Glass'],
+    noun:['Highway','Skyline','Overpass','Tunnel','Coastline','Exit','Streetlight','Rearview','Horizon','Boulevard','Engine','Afterglow','Detour','Sunset Strip']},
   china:{title:'Scarlet Mist',tagline:'Guzheng · bamboo flute · erhu · a misty pavilion',flipTo:'Flip to Cozy',bpm:[70,80],swing:[0,0],minorP:0,
     voices:['koto'],trim:1.5,reverb:0.6,tone:4800,whoosh:false,hatFrom:99,kickFrom:99,hatMul:1,kickV:1,snare:false,ghost:false,bassDur:[2,2],
     plan:['Prelude','Theme','Theme 2','Bridge','Bridge 2','Return','Variation','Coda'],
@@ -225,7 +232,7 @@ const MODES={
 };
 let comp_=null,lim_=null,hpNode=null;const sendNodes={};
 /* Yoru is switched off for now (its code is kept below): it is left out of this list, so it can't be flipped to, restored from saved state or opened from a code. Put 'japan' back between 'groove' and 'noir' to bring it back. */
-const MODE_ORDER=['cozy','groove','noir','china'];
+const MODE_ORDER=['cozy','groove','drive','noir','china'];
 /* settings remembered on this phone between visits */
 const STORE_KEY='looplight.settings.v1';
 let SAVED=null;try{SAVED=JSON.parse(localStorage.getItem(STORE_KEY)||'null');}catch(e){}
@@ -262,7 +269,7 @@ function idxMidi(root,iv,idx){return root+12*Math.floor(idx/7)+iv[((idx%7)+7)%7]
 const pcOf=(m,keyPc)=>((m-keyPc)%12+12)%12;
 
 function genPhrase(T){
-  const sc=T.scaleNotes,RH=T.mode==='groove'?RHY_G:RHY;
+  const sc=T.scaleNotes,RH=(T.mode==='groove'||T.mode==='drive')?RHY_G:RHY;
   /* a tune with a question and an answer: the hook, the hook answered a step away, a contrasting turn, then a resolving close */
   const r1=pick(RH),r2=pick(RH.filter(r=>r!==r1)),r3=pick(RH.filter(r=>r!==r1&&r!==r2));
   const walk=(k,start,moves)=>{let i=start;const out=[i];for(let q=1;q<k;q++){i=clamp(i+pick(moves),0,sc.length-1);out.push(i);}return out;};
@@ -323,7 +330,7 @@ function compose(prevPc,fixed,m){
   return best;
 }
 function composeInner(prevPc,fixed,seed,m){
-  const cfg=MODES[m],G=m==='groove';
+  const cfg=MODES[m],G=m==='groove'||m==='drive';
   const minor=window.__PROG?false:R()<cfg.minorP;
   let ki=rnd(7);
   if(fixed)ki=fixed.ki;else if(KEYS[ki]===prevPc)ki=(ki+1)%7;
@@ -1854,7 +1861,7 @@ function scheduleBar(t0){
     }
   }
 
-  if((T.mode==='noir'||T.mode==='china')&&noirRec!==false){uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
+  if(REC[T.mode]&&noirRec!==false){uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
   if(T.mode==='noir'){scheduleNoirBar(T,t0,bar,sec,bi,e,st,ending);uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
   if(T.mode==='china'){scheduleChinaBar(T,t0,bar,sec,bi,e,st,ending);uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
   if(T.mode==='japan'){scheduleJapanBar(T,t0,bar,sec,bi,e,st,ending);uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
@@ -1880,7 +1887,7 @@ function scheduleBar(t0){
     /* the intro hints at the hook in its last two bars */
     T.A[bi].forEach(n=>{playMelody(T,st(n.step),n.midi,0.55);uiQ.push({t:st(n.step),k:'note',m:n.midi});});
   }
-  const HV=T.mode==='groove'?HATV_G:HATV;
+  const HV=(T.mode==='groove'||T.mode==='drive')?HATV_G:HATV;
   if(bar>=cfg.hatFrom&&!dropOut&&!S.lite)for(let s=0;s<8;s+=1)hat(st(s),HV[s]*cfg.hatMul);
   if(bar>=cfg.kickFrom&&!dropOut){
     T.drum.k.forEach(s=>{const t=st(s);kick(t,(s===0?1:0.75)*cfg.kickV);uiQ.push({t:t,k:'kick'});});
@@ -1931,8 +1938,8 @@ document.addEventListener('visibilitychange',()=>{if(playing&&document.visibilit
    If full recordings are in audio/jazz-noir/ (noir-01.mp3 ... noir-30.mp3), Jazz Noir plays them, shuffled and crossfaded, forever.
    With none there, it falls back to the generated sax band. */
 /* Scarlet Mist plays recordings the same way (audio/silk-bamboo/s64-01.mp3 ...). The state below is always the current side's; it is parked and restored when the side changes. */
-const REC={noir:{dir:'audio/jazz-noir/noir-',max:66,mb:2.6,title:'Jazz Noir',meta:'Tenor sax, piano, bass & brushes'},china:{dir:'audio/silk-bamboo/s64-',max:42,mb:3.4,title:'Scarlet Mist',meta:'Guzheng, flute & erhu'}};
-const recMode=()=>mode==='noir'||mode==='china';
+const REC={noir:{dir:'audio/jazz-noir/noir-',max:66,mb:2.6,title:'Jazz Noir',meta:'Tenor sax, piano, bass & brushes'},drive:{dir:'audio/night-drive/drive-',max:18,mb:2.2,title:'Night Drive',meta:'Synths, drum machine & bass'},china:{dir:'audio/silk-bamboo/s64-',max:42,mb:3.4,title:'Scarlet Mist',meta:'Guzheng, flute & erhu'}};
+const recMode=()=>!!REC[mode];
 const NOIR_MAX=66,noirPath=i=>REC[mode].dir+String(i+1).padStart(2,'0')+'.mp3';
 let noirRec=null,noirList=[],noirProbing=null,noirDecks=null,noirAct=0,noirQ=[],noirXf=false,noirNo=0;
 const recParked={};
@@ -2031,10 +2038,13 @@ const NOIR_NAMES=(()=>{const adj=['Velvet','Smoky','Midnight','Amber','Blue','La
   const out=[],used=new Set(),r=mulberry(20261020);
   for(let i=0;i<NOIR_MAX;i++){let n,k=0;do{n=adj[Math.floor(r()*adj.length)]+' '+noun[Math.floor(r()*noun.length)];k++;}while(used.has(n)&&k<50);used.add(n);out.push(n);}
   return out;})();
+const DRIVE_NAMES=(()=>{const adj=MODES.drive.adj,noun=MODES.drive.noun,out=[],used=new Set(),r=mulberry(20261024);
+  for(let i=0;i<REC.drive.max;i++){let n,k=0;do{n=adj[Math.floor(r()*adj.length)]+' '+noun[Math.floor(r()*noun.length)];k++;}while(used.has(n)&&k<50);used.add(n);out.push(n);}
+  return out;})();
 const CHINA_NAMES=(()=>{const adj=MODES.china.adj,noun=MODES.china.noun,out=[],used=new Set(),r=mulberry(20261021);
   for(let i=0;i<REC.china.max;i++){let n,k=0;do{n=adj[Math.floor(r()*adj.length)]+' '+noun[Math.floor(r()*noun.length)];k++;}while(used.has(n)&&k<50);used.add(n);out.push(n);}
   return out;})();
-function noirUi(){noirBarShown=-1;noirOffUi();$('codeBtn').parentElement.style.display=(recMode()&&noirRec)?'none':'';if(!recMode()||!noirRec)return;const d=noirDecks&&noirDecks[noirAct],nm=mode==='china'?CHINA_NAMES:NOIR_NAMES;$('title').textContent=d&&d.idx>=0?nm[d.idx]:REC[mode].title;$('meta').textContent=REC[mode].meta;$('codeTxt').textContent='recording';recMedia();}
+function noirUi(){noirBarShown=-1;noirOffUi();$('codeBtn').parentElement.style.display=(recMode()&&noirRec)?'none':'';if(!recMode()||!noirRec)return;const d=noirDecks&&noirDecks[noirAct],nm=mode==='china'?CHINA_NAMES:mode==='drive'?DRIVE_NAMES:NOIR_NAMES;$('title').textContent=d&&d.idx>=0?nm[d.idx]:REC[mode].title;$('meta').textContent=REC[mode].meta;$('codeTxt').textContent='recording';recMedia();}
 function noirLoad(d){const i=noirNext();d.idx=i;d.el.src=noirPath(i);d.el.load();}
 function noirStart(){
   if(!recMode()||!noirRec||!playing)return;
@@ -2129,7 +2139,7 @@ function recMedia(){
   try{
     if(!('mediaSession' in navigator)||!recMode()||!noirRec||!noirDecks)return;
     const d=noirDecks[noirAct];if(!d||d.idx<0)return;
-    const nm=(mode==='china'?CHINA_NAMES:NOIR_NAMES)[d.idx],key=mode+':'+d.idx;
+    const nm=(mode==='china'?CHINA_NAMES:mode==='drive'?DRIVE_NAMES:NOIR_NAMES)[d.idx],key=mode+':'+d.idx;
     if(recMetaKey!==key&&typeof MediaMetadata!=='undefined'){
       navigator.mediaSession.metadata=new MediaMetadata({title:nm,artist:'Looplight',album:FLIP_NAME[mode],artwork:[{src:'icons/icon-192.png',sizes:'192x192',type:'image/png'},{src:'icons/icon-512.png',sizes:'512x512',type:'image/png'}]});
       recMetaKey=key;metaTune=null;
@@ -2198,7 +2208,7 @@ function renderAmbVols(){
     row.appendChild(lab);row.appendChild(inp);row.appendChild(out);box.appendChild(row);
   });
 }
-const FLIP_NAME={cozy:'Cozy',groove:'Sunny Side',japan:'Yoru',noir:'Jazz Noir',china:'Scarlet Mist'};
+const FLIP_NAME={cozy:'Cozy',groove:'Sunny Side',japan:'Yoru',noir:'Jazz Noir',china:'Scarlet Mist',drive:'Night Drive'};
 /* one button for each of the other sides, so you pick where to flip to */
 function renderFlips(){
   const box=$('flips');box.textContent='';
@@ -2319,7 +2329,7 @@ const playBtn=$('play');
 const ICON_PLAY='<svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1l9 5-9 5z" fill="currentColor"/></svg>';
 const ICON_PAUSE='<svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="3" height="9" rx="1" fill="currentColor"/><rect x="7" y="1.5" width="3" height="9" rx="1" fill="currentColor"/></svg>';
 function renderPlayBtn(){playBtn.innerHTML=playing?ICON_PAUSE+'<span>Pause</span>':ICON_PLAY+'<span>'+(started?'Resume':'Play')+'</span>';updateMediaSession();}
-function renderStatus(){shown=null;$('status').innerHTML=loadingBand?'<b>'+(mode==='noir'?'Warming up the sax…':mode==='china'?'Tuning the guzheng…':'Tuning the koto…')+'</b>':'';}
+function renderStatus(){shown=null;$('status').innerHTML=loadingBand?'<b>'+(mode==='noir'?'Warming up the sax…':mode==='china'?'Tuning the guzheng…':mode==='drive'?'Warming up the synths…':'Tuning the koto…')+'</b>':'';}
 let shown=null;
 function renderTune(T,bar){
   if(recMode()&&noirRec){noirUi();$('upnext').innerHTML='';return;}
@@ -2520,10 +2530,67 @@ function drawJapan(dt,time){
   }
   pulse=Math.max(0,pulse-dt*3.2);
 }
+
+/* ---- Night Drive scene: a neon-grid road running to a striped sun, stars above, a slow glow that beats with the kick ---- */
+function drawDrive(dt,time){
+  cx.setTransform(dpr,0,0,dpr,0,0);
+  const wy=H*0.6,mid=W*0.5,t=reduceMotion?0:time;
+  const sky=cx.createLinearGradient(0,0,0,wy);sky.addColorStop(0,'#07031a');sky.addColorStop(0.55,'#2a0c52');sky.addColorStop(1,'#9b2a8c');
+  cx.fillStyle=sky;cx.fillRect(0,0,W,H);
+  stars.forEach(s=>{cx.fillStyle='rgba(255,230,255,'+(0.22+0.22*Math.sin(t*0.8+s.p)).toFixed(3)+')';cx.beginPath();cx.arc(s.x*W,s.y*H*0.9*(wy/H),s.s*0.8,0,6.283);cx.fill();});
+  const sr=Math.max(26,Math.min(H*0.2,W*0.22)),breathe=0.5+0.5*Math.sin(t*0.9),glowR=sr*(2.3+pulse*0.5+breathe*0.25);
+  const halo=cx.createRadialGradient(mid,wy-sr*0.35,0,mid,wy-sr*0.35,glowR);halo.addColorStop(0,'rgba(255,110,190,0.5)');halo.addColorStop(0.4,'rgba(255,80,170,0.16)');halo.addColorStop(1,'rgba(255,80,170,0)');
+  cx.fillStyle=halo;cx.fillRect(0,0,W,wy);
+  /* the striped sun, sitting on the horizon */
+  cx.save();cx.beginPath();cx.arc(mid,wy-sr*0.12,sr,Math.PI,0);cx.lineTo(mid+sr,wy);cx.lineTo(mid-sr,wy);cx.closePath();cx.clip();
+  const sg=cx.createLinearGradient(0,wy-sr*1.12,0,wy);sg.addColorStop(0,'#ffe36e');sg.addColorStop(0.5,'#ff7ab4');sg.addColorStop(1,'#ff3d97');
+  cx.fillStyle=sg;cx.fillRect(mid-sr,wy-sr*1.2,sr*2,sr*1.3);
+  cx.fillStyle='#2a0c52';
+  for(let i=0;i<6;i++){const y=wy-sr*0.06-i*sr*0.17,h=sr*0.02+i*sr*0.012;cx.fillRect(mid-sr,y-h,sr*2,h);}
+  cx.restore();
+  /* far hills */
+  cx.fillStyle='#14062e';cx.beginPath();cx.moveTo(0,wy);
+  for(let x=0;x<=W;x+=6){const u=x/W;cx.lineTo(x,wy-H*(0.018+0.03*Math.sin(u*9+1)+0.022*Math.sin(u*23+2)));}
+  cx.lineTo(W,wy);cx.closePath();cx.fill();
+  /* the ground and its moving grid */
+  const fg=cx.createLinearGradient(0,wy,0,H);fg.addColorStop(0,'#2b0a4f');fg.addColorStop(1,'#0b0420');cx.fillStyle=fg;cx.fillRect(0,wy,W,H-wy);
+  const glow=0.55+pulse*0.35+breathe*0.1;
+  cx.lineCap='butt';
+  const cols=16,spread=W*1.55;
+  cx.strokeStyle='rgba(255,90,200,'+(0.5*glow).toFixed(3)+')';cx.lineWidth=1.2;
+  for(let i=-cols;i<=cols;i++){const bx=mid+i*(spread/cols/2);cx.beginPath();cx.moveTo(mid+(bx-mid)*0.02,wy);cx.lineTo(bx,H);cx.stroke();}
+  const sp=reduceMotion?0:(t*0.28)%1;
+  for(let k=0;k<14;k++){
+    let u=(k+sp)/14;const y=wy+(H-wy)*u*u*u;
+    cx.strokeStyle='rgba(120,230,255,'+((0.15+0.5*u)*glow).toFixed(3)+')';cx.lineWidth=0.6+u*1.6;
+    cx.beginPath();cx.moveTo(0,y);cx.lineTo(W,y);cx.stroke();
+  }
+  /* the road: edge lines and moving centre dashes */
+  const rw=W*0.2;
+  cx.strokeStyle='rgba(255,255,255,'+(0.55*glow).toFixed(3)+')';cx.lineWidth=2;
+  [-1,1].forEach(sd=>{cx.beginPath();cx.moveTo(mid+sd*rw*0.04,wy);cx.lineTo(mid+sd*rw*2.2,H);cx.stroke();});
+  cx.fillStyle='rgba(255,235,120,'+(0.8*glow).toFixed(3)+')';
+  for(let k=0;k<9;k++){
+    const u0=(k+sp)/9,u1=u0+0.035;
+    const y0=wy+(H-wy)*u0*u0*u0,y1=wy+(H-wy)*u1*u1*u1,w0=1+u0*u0*5,w1=1+u1*u1*5;
+    cx.beginPath();cx.moveTo(mid-w0,y0);cx.lineTo(mid+w0,y0);cx.lineTo(mid+w1,y1);cx.lineTo(mid-w1,y1);cx.closePath();cx.fill();
+  }
+  /* sparks that rise with the notes (only when a generated tune is playing) */
+  for(let i=flies.length-1;i>=0;i--){
+    const f=flies[i];f.age+=dt;
+    if(f.age>=f.life||f.y<-10){flies.splice(i,1);continue;}
+    f.x+=(f.vx+Math.sin(t*1.1+f.p)*6)*dt;f.y+=f.vy*dt;
+    const a=Math.min(1,f.age*1.5)*Math.min(1,(f.life-f.age));
+    const gl=cx.createRadialGradient(f.x,f.y,0,f.x,f.y,12);gl.addColorStop(0,'rgba(255,120,210,'+(0.6*a).toFixed(3)+')');gl.addColorStop(1,'rgba(255,90,200,0)');
+    cx.fillStyle=gl;cx.fillRect(f.x-13,f.y-13,26,26);
+  }
+  pulse=Math.max(0,pulse-dt*3.2);
+}
 function draw(dt,time){
   if(!W||!H)return;
   if(mode==='noir'){drawNoir(dt,time);return;}
   if(mode==='china'){drawChina(dt,time);return;}
+  if(mode==='drive'){drawDrive(dt,time);return;}
   if(mode==='japan'){drawJapan(dt,time);return;}
   if(mode==='groove'){drawGroove(dt,time);return;}
   cx.setTransform(dpr,0,0,dpr,0,0);
