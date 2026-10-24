@@ -37,7 +37,7 @@ html[data-mode="drive"]{--bg:#0c0720;--surface:#150d33;--surface-2:#20134a;--lin
 html[data-mode="china"]{--bg:#150a0c;--surface:#241214;--surface-2:#321a1b;--line:#4d2c2b;--fg:#f6ece0;--muted:#b9a39a;--lamp:#ee6c4d;--lamp-ink:#2b0d07;--lamp-soft:rgba(238,108,77,.15);--lamp-rgb:238,108,77;--past:#5e3a36}
 html[data-mode="groove"]{--bg:#0e1a17;--surface:#15251f;--surface-2:#1e352b;--line:#2e4a3c;--fg:#f4f0e2;--muted:#9fb7a8;--lamp:#b9e38c;--lamp-ink:#142208;--lamp-soft:rgba(185,227,140,.15);--lamp-rgb:185,227,140;--past:#3f6150}
 *{box-sizing:border-box}
-html:not([data-mode="cozy"]) .only-cozy,html:not([data-mode="groove"]) .only-groove,html:not([data-mode="japan"]) .only-japan,html:not([data-mode="noir"]) .only-noir,html:not([data-mode="drive"]) .only-drive{display:none}
+html:not([data-mode="cozy"]) .only-cozy,html:not([data-mode="groove"]) .only-groove,html:not([data-mode="noir"]) .only-noir,html:not([data-mode="drive"]) .only-drive{display:none}
 html:not([data-mode="japan"]):not([data-mode="china"]) .jc{display:none}
 .titlebox{display:flex;flex-direction:column;gap:2px}
 .tagline{margin:0;font:400 .78rem/1.3 var(--f-mono);letter-spacing:.06em;color:var(--muted)}
@@ -185,7 +185,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v84';
+const BUILD='looplight-v85';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -228,7 +228,6 @@ const MODES={
     noun:['Lounge','Alley','Corner','Cigar','Window','Boulevard','Platform','Hotel','Streetlight','Stairwell','Taxi','Last Call']}
 };
 let comp_=null,lim_=null,hpNode=null;const sendNodes={};
-/* Yoru is switched off for now (its code is kept below): it is left out of this list, so it can't be flipped to, restored from saved state or opened from a code. Put 'japan' back between 'groove' and 'noir' to bring it back. */
 const MODE_ORDER=['cozy','groove','drive','noir','china'];
 /* settings remembered on this phone between visits */
 const STORE_KEY='looplight.settings.v1';
@@ -266,8 +265,6 @@ const DRUMS={
 };
 const PLAN=[{n:'Intro',ph:null},{n:'Theme',ph:'A'},{n:'Theme 2',ph:'A2'},{n:'Bridge',ph:'B'},{n:'Bridge 2',ph:'B2'},{n:'Return',ph:'A'},{n:'Variation',ph:'A2'},{n:'Outro',ph:'A'}];
 const HATV=[0.6,0.3,0.5,0.3,0.6,0.3,0.5,0.35];
-const ADJ=['Slow','Quiet','Warm','Rainy','Sleepy','Golden','Late','Soft','Hazy','Gentle','Lazy','Misty'];
-const NOUN=['Sunday','Window','Tea','Blanket','Porch','Kettle','Candle','Library','Morning','Sweater','Window Seat','Evening','Staircase','Bookshop'];
 
 function idxMidi(root,iv,idx){return root+12*Math.floor(idx/7)+iv[((idx%7)+7)%7];}
 const pcOf=(m,keyPc)=>((m-keyPc)%12+12)%12;
@@ -309,10 +306,9 @@ function varyPhrase(T,P){
 }
 const KEYS=[0,2,3,5,7,9,10];
 function parseCode(str){
-  const m=/^\s*([0-9a-z]{1,8})\s*[-\s]\s*([0-6])\s*([gjnscdehi]?)\s*$/i.exec(str||'');
+  const m=/^\s*([0-9a-z]{1,8})\s*[-\s]\s*([0-6])\s*([gnscdehi]?)\s*$/i.exec(str||'');
   const sf=m&&m[3]?m[3].toLowerCase():'';
-  if(m&&/^[jst]$/i.test(m[3]||''))return null;
-  return m?{seed:parseInt(m[1],36),ki:+m[2],mode:sf==='g'?'groove':(sf==='d'||sf==='e'||sf==='h'||sf==='i')?'drive':(sf==='j'||sf==='s'||sf==='t')?'japan':sf==='n'?'noir':sf==='c'?'china':'cozy',style:sf==='s'?'sham':sf==='t'?'tsu':'koto',dstyle:(sf==='e'||sf==='i')?'m2':'m5',v2:sf==='h'||sf==='i',text:m[1].toLowerCase()+'-'+m[2]+sf}:null;
+  return m?{seed:parseInt(m[1],36),ki:+m[2],mode:sf==='g'?'groove':(sf==='d'||sf==='e'||sf==='h'||sf==='i')?'drive':sf==='n'?'noir':sf==='c'?'china':'cozy',dstyle:(sf==='e'||sf==='i')?'m2':'m5',v2:sf==='h'||sf==='i',text:m[1].toLowerCase()+'-'+m[2]+sf}:null;
 }
 /* each new Cozy or Sunny Side tune is picked to differ from the one before it in at least three ways (chords, drums, bass, accompaniment, chord colour, lead sound, major/minor) while keeping the tempo within 3 BPM of it, so the pace stays steady; a saved tune code still replays exactly */
 const lastSig={};
@@ -405,7 +401,6 @@ function jPhrase(pool,keyPc,busy,home,motif){
 const CSCALES={gong:[0,2,4,7,9],shang:[0,2,5,7,10],jue:[0,3,5,8,10],zhi:[0,2,5,7,9],yu:[0,3,5,7,10]};
 const CNAMES={gong:'Gong',shang:'Shang',jue:'Jue',zhi:'Zhi',yu:'Yu'};
 const CPROG=[[0,2,1,0],[0,3,2,0],[0,1,3,0],[0,2,3,1],[0,4,2,0],[0,3,1,0]];
-const czMk=a=>a.map((o,i)=>[i,o]);
 /* guzheng left hand, in scale steps from the bar's chord (-5 is the low root): the bar opens quietly, a held note, then a rising broken chord (root, fifth, octave, ninth) through the second half */
 const CZ_LH1=[[2,0],[4,-5],[5,-2],[6,0],[7,1]];
 const CZ_LH2=[[0,-5],[2,-2],[4,-5],[5,-2],[6,0],[7,-2]];
@@ -553,94 +548,8 @@ const NQ={
   dom7b9:{vox:[4,10,13,20],sc:[0,1,3,4,5,7,8,10],ct:[4,10,7,1],bn:-1,fifth:7}
 };
 /* four bars, one chord a bar: [semitones above the key, quality] */
-const NP_MIN_A=[
-  [[0,'m7'],[5,'m7'],[10,'dom7'],[3,'maj7']],
-  [[0,'m7'],[3,'maj7'],[8,'maj7'],[10,'dom7']],
-  [[0,'m7'],[5,'m7'],[0,'m7'],[10,'dom7']]
-];
-const NP_MIN_B=[
-  [[5,'m7'],[10,'dom7'],[3,'maj7'],[8,'maj7']],
-  [[8,'maj7'],[10,'dom7'],[3,'maj7'],[0,'m7']],
-  [[3,'maj7'],[8,'maj7'],[10,'dom7'],[0,'m7']]
-];
-const NP_MAJ_A=[
-  [[0,'maj7'],[9,'m7'],[2,'m7'],[7,'dom7']],
-  [[0,'maj7'],[4,'m7'],[9,'m7'],[2,'m7']],
-  [[0,'maj7'],[9,'m7'],[5,'maj7'],[7,'dom7']],
-  [[4,'m7'],[9,'m7'],[2,'m7'],[7,'dom7']]
-];
-const NP_MAJ_B=[
-  [[5,'maj7'],[4,'m7'],[9,'m7'],[2,'m7']],
-  [[2,'m7'],[7,'dom7'],[4,'m7'],[9,'m7']],
-  [[5,'maj7'],[7,'dom7'],[4,'m7'],[9,'m7']],
-  [[9,'m7'],[2,'m7'],[7,'dom7'],[0,'maj7']]
-];
 /* sax rhythms on the eight-step bar, [start step, length in steps]; plenty of air */
-const NCELLS={
-  head:[[[0,3],[3,1],[4,4]],[[2,2],[4,2]],[[0,4],[5,1],[6,2]],[[1,2],[4,1],[5,3]],[[0,2],[2,1],[3,1],[4,4]],[[0,8]],[[3,1],[4,4]],[[0,3],[4,2],[6,2]]],
-  solo:[[[0,1],[1,1],[2,1],[3,1],[4,2],[6,2]],[[0,2],[2,1],[3,1],[4,1],[5,1],[6,2]],[[1,1],[2,1],[3,2],[5,1],[6,1],[7,1]],[[0,3],[3,1],[4,1],[5,1],[6,2]],[[2,1],[3,1],[4,1],[5,1],[6,2]]]
-};
-const NPLAN={head:[[0,2,4,7],[1,3,5,6],[-1,1,3,6],[1,6,5,3]],bridge:[[5,0,2],[1,3,4],[0,7,2],[5,3,6]]};
-const NCOMP=[[0],[0,5],[0],[0,3],[2,5],[0]];
-const NVEL={head:0.62,bridge:0.7,solo:0.66,outro:0.5,hint:0.5};
 
-function noirPool(ch,which,one){
-  const rels=one!==undefined?[one]:NQ[ch.q][which],out=[];
-  for(let m=50;m<=71;m++){const r=((m-ch.pc)%12+12)%12;if(rels.indexOf(r)>=0)out.push(m);}
-  return out;
-}
-function noirNearest(pl,prev){let b=pl[0],bd=1e9;pl.forEach(m=>{const d=Math.abs(m-prev);if(d<bd){bd=d;b=m;}});return b;}
-function noirPickNear(pl,prev){
-  const c=pl.map(m=>({m:m,d:Math.abs(m-prev)+Math.abs(m-64)*0.08})).sort((a,b)=>a.d-b.d);
-  /* mostly one of the nearest few notes, with the odd leap */
-  const k=R()<0.12?Math.min(c.length-1,3+rnd(2)):rnd(Math.min(3,c.length));
-  return c[k].m;
-}
-/* Phrases like the ones in the 1940s noir ballad this is modelled on: a flowing run of triplet notes that climbs through the chord and falls back, one long held note, then a breath. Twelve triplet steps make a bar. */
-function noirTones(ch){
-  const rels=[0].concat(NQ[ch.q].ct),out=[];
-  for(let m=50;m<=71;m++){const r=((m-ch.pc)%12+12)%12;if(rels.indexOf(r)>=0)out.push(m);}
-  return out;
-}
-function noirRun(ch,k,off,dir,prev,v){
-  const ct=noirTones(ch),sc=noirPool(ch,'sc'),out=[];
-  const peak=Math.max(2,Math.round(k*(0.5+R()*0.2)));
-  let m=noirNearest(ct,dir>0?prev:prev+4),d=dir,last=-1;
-  for(let i=0;i<k;i++){
-    if(i>0){
-      if(i===peak&&dir>0)d=-1;
-      if(m>68)d=-1;else if(m<54)d=1;
-      if(R()<0.8){const ix=ct.indexOf(noirNearest(ct,m));m=ct[clamp(ix+d*pick([1,1,2]),0,ct.length-1)];}
-      else{const ix=sc.indexOf(noirNearest(sc,m));m=sc[clamp(ix+d,0,sc.length-1)];}
-      if(m===last){const ix=sc.indexOf(noirNearest(sc,m));m=sc[clamp(ix-d,0,sc.length-1)];}
-    }
-    last=m;
-    out.push({s:off+i,d:1,m:m,v:v*(0.82+0.3*Math.sin(Math.PI*(i+1)/(k+1))),sc:0,fl:false,br:i===0&&off===0,gr:0});
-  }
-  return out;
-}
-function noirHold(ch,off,steps,from,v){
-  const q=NQ[ch.q],cands=noirPool(ch,'ct');
-  const c=cands.filter(m=>m!==from).map(m=>({m:m,d:Math.abs(m-from)})).sort((a,b)=>a.d-b.d);
-  const m=c[Math.min(c.length-1,R()<0.3?1:0)].m;
-  return {s:off,d:steps,m:m,v:v*1.08,sc:R()<0.35?1:0,fl:steps>=6&&R()<0.5,br:false,gr:0};
-}
-function noirBarPhrase(ch,kind,prev,dir,v){
-  let notes=[];
-  if(kind==='full'){const k=pick([6,7,8,9]);notes=noirRun(ch,k,0,dir,prev,v);notes.push(noirHold(ch,k,12-k,notes[k-1].m,v));}
-  else if(kind==='echo'){const k=pick([3,4]);notes=noirRun(ch,k,3,dir,prev,v*0.9);notes.push(noirHold(ch,3+k,9-k,notes[k-1].m,v*0.9));}
-  else if(kind==='held'){notes=[noirHold(ch,0,pick([6,7,8]),prev,v)];}
-  else if(kind==='long'){notes=[noirHold(ch,0,12,prev,v)];}
-  return notes;
-}
-function noirSection(chords,kinds,start,dir,v){
-  let prev=start;const bars=[];
-  for(let b=0;b<4;b++){
-    const nb=noirBarPhrase(chords[b],kinds[b],prev,dir,v);
-    bars.push(nb);if(nb.length)prev=nb[nb.length-1].m;
-  }
-  return bars;
-}
 const noirCopy=bars=>bars.map(nb=>nb.map(n=>Object.assign({},n)));
 
 /* piano voicing: each chord tone moves to the nearest note to where it was, so the hand barely moves */
@@ -658,14 +567,6 @@ function noirVoicing(ch,prev){
   return {roles:roles,sorted:sorted};
 }
 const noirFit=m=>{while(m>52)m-=12;while(m<34)m+=12;return m;};
-function noirBass(ch,nx,walk){
-  const q=NQ[ch.q],r=36+ch.pc;let nr=36+nx.pc;
-  if(nr-r>6)nr-=12;else if(r-nr>6)nr+=12;
-  const fifth=noirFit(r+q.fifth),third=noirFit(r+q.vox[0]);
-  if(!walk)return [{b:0,m:noirFit(r),d:2},{b:2,m:R()<0.7?fifth:noirFit(r+12),d:2}];
-  const approach=noirFit(nr+(R()<0.5?-1:1));
-  return [{b:0,m:noirFit(r),d:1},{b:1,m:R()<0.5?third:fifth,d:1},{b:2,m:R()<0.5?fifth:noirFit(r+12),d:1},{b:3,m:approach,d:1}];
-}
 /* ---- Phrases lifted from the real 1940s noir ballad (its tenor and alto sax lines), with their true timing and true notes. p: where the phrase starts after the beat (in triplet steps, as the original did); e: [start, length, note]. The chords are then chosen to suit the notes, so nothing clashes. A bar is 12 steps; a section is 4 bars. ---- */
 const NPH=[{"p":4.5,"L":14.67,"e":[[0.0,0.86,57],[0.86,0.65,60],[1.51,0.5,64],[2.65,0.68,71],[3.32,0.65,69],[3.97,0.5,71],[4.41,0.81,64],[5.22,1.0,60],[6.22,1.0,57],[7.22,1.13,52],[8.35,1.0,55],[9.35,1.0,54],[10.35,4.32,53]]},{"p":4.25,"L":13.41,"e":[[0.0,1.0,48],[1.0,0.68,52],[1.68,0.92,55],[2.6,0.95,60],[3.54,1.0,58],[4.54,0.95,55],[5.49,1.0,58],[6.49,1.0,56],[7.49,5.92,56]]},{"p":4.0,"L":13.64,"e":[[0.0,0.97,53],[0.97,0.7,56],[1.68,0.79,60],[2.46,1.19,65],[3.65,1.13,67],[4.78,2.0,68],[6.78,1.0,65],[7.78,5.86,61]]},{"p":2.0,"L":18.79,"e":[[0.0,0.97,48],[0.97,1.92,53],[2.89,0.97,55],[3.87,1.89,56],[5.76,0.97,60],[6.73,1.97,65],[8.7,1.03,70],[9.73,5.05,70],[14.78,0.97,68],[15.76,1.0,70],[16.76,0.97,68],[17.73,1.06,70]]},{"p":4.5,"L":13.3,"e":[[0.0,0.78,60],[0.78,0.76,72],[1.54,0.76,70],[2.3,0.75,67],[3.05,0.73,64],[3.78,0.75,61],[4.54,0.76,60],[5.3,0.76,58],[6.05,0.76,55],[6.81,0.73,52],[7.54,0.76,58],[8.3,5.0,56]]},{"p":4.0,"L":7.99,"e":[[0.0,1.0,60],[1.0,0.51,65],[1.51,0.5,60],[2.0,0.51,58],[2.51,0.5,58],[3.0,0.52,56],[3.51,4.48,53]]},{"p":4.75,"L":17.59,"e":[[0.0,0.92,48],[0.92,0.57,50],[1.49,1.19,53],[2.68,2.89,50],[5.57,1.0,53],[6.57,1.0,55],[7.57,4.03,57],[11.6,1.0,50],[12.6,1.0,53],[13.6,1.0,55],[14.59,3.0,53]]},{"p":4.25,"L":14.73,"e":[[0.0,2.11,67],[2.11,1.06,65],[3.16,1.02,62],[4.19,1.06,59],[5.24,1.08,56],[6.33,1.03,53],[7.35,0.54,50],[7.89,0.51,47],[8.41,1.05,50],[9.46,5.27,48]]},{"p":2.0,"L":16.73,"e":[[0.0,0.76,48],[0.76,0.78,50],[1.54,0.7,53],[2.24,0.62,55],[2.87,0.65,58],[3.51,0.7,60],[4.22,1.38,62],[5.59,3.16,65],[8.76,0.97,62],[9.73,0.81,53],[10.54,6.19,57]]},{"p":4.25,"L":21.14,"e":[[0.0,0.54,62],[0.54,0.54,65],[1.08,1.08,67],[2.16,1.08,68],[3.24,0.89,67],[4.14,0.54,62],[4.68,1.08,59],[5.76,0.54,56],[6.3,1.08,55],[7.38,0.54,54],[7.92,0.54,55],[8.46,1.08,63],[9.54,3.19,62],[12.73,1.06,55],[13.78,1.05,58],[14.84,1.11,62],[15.95,1.05,55],[17.0,4.14,58]]},{"p":4.25,"L":21.17,"e":[[0.0,1.05,62],[1.05,1.06,67],[2.11,0.51,62],[2.62,0.54,61],[3.16,1.06,58],[4.22,3.11,60],[7.33,1.08,58],[8.41,2.13,55],[10.54,1.08,50],[11.62,2.13,50],[13.76,1.08,53],[14.84,6.33,53]]},{"p":2.25,"L":23.35,"e":[[0.0,1.05,53],[1.05,1.92,55],[2.97,1.24,58],[4.21,2.08,62],[6.3,1.02,67],[7.32,3.16,61],[10.49,3.22,58],[13.7,2.11,55],[15.81,1.11,58],[16.92,6.43,58]]},{"p":4.75,"L":14.41,"e":[[0.0,0.7,53],[0.7,0.92,55],[1.62,0.92,58],[2.54,0.7,69],[3.24,0.76,67],[4.0,0.76,65],[4.76,0.78,61],[5.54,0.79,57],[6.33,0.65,54],[6.97,1.05,52],[8.03,1.06,50],[9.08,0.76,57],[9.84,0.75,53],[10.59,0.65,55],[11.24,1.05,50],[12.3,2.11,53]]},{"p":1.25,"L":16.08,"e":[[0.0,0.92,50],[0.92,0.7,55],[1.62,0.89,57],[2.51,0.92,58],[3.43,0.89,60],[4.32,0.89,62],[5.22,0.89,55],[6.11,0.92,62],[7.03,0.89,62],[7.92,0.92,60],[8.84,2.7,62],[11.54,4.54,62]]},{"p":1.5,"L":14.9,"e":[[0.0,0.73,53],[0.73,0.89,54],[1.62,1.05,62],[2.67,0.86,65],[3.54,0.68,62],[4.21,0.81,60],[5.03,0.79,58],[5.81,0.81,60],[6.62,3.51,62],[10.14,4.76,62]]},{"p":1.0,"L":13.67,"e":[[0.0,2.78,72],[2.78,0.68,69],[3.46,0.7,65],[4.16,0.7,64],[4.86,1.05,63],[5.92,0.7,72],[6.62,0.68,69],[7.3,0.7,65],[8.0,0.73,63],[8.73,0.84,60],[9.57,0.84,57],[10.41,0.5,54],[10.78,2.89,53]]},{"p":1.0,"L":17.08,"e":[[0.0,1.0,62],[1.0,1.0,65],[2.0,0.89,67],[2.89,1.03,65],[3.92,1.08,61],[5.0,1.03,62],[6.03,0.89,65],[6.92,1.03,67],[7.95,0.5,61],[8.14,0.84,60],[8.97,1.03,58],[10.0,1.03,55],[11.03,6.05,58]]},{"p":4.5,"L":10.46,"e":[[0.0,0.52,62],[0.52,0.7,65],[1.22,0.5,67],[1.6,0.86,69],[2.46,0.86,65],[3.32,0.86,62],[4.19,0.87,57],[5.06,0.89,53],[5.95,1.0,50],[6.95,0.51,57],[7.46,3.0,55]]},{"p":2.0,"L":10.06,"e":[[0.0,0.7,62],[0.7,0.95,63],[1.65,0.81,67],[2.46,0.89,70],[3.35,0.73,74],[4.08,0.7,72],[4.78,0.73,69],[5.52,0.75,65],[6.27,0.79,64],[7.06,3.0,63]]},{"p":1.75,"L":11.89,"e":[[0.0,0.89,53],[0.89,0.89,55],[1.78,0.92,58],[2.7,0.5,60],[3.11,0.5,58],[3.59,8.3,62]]},{"p":4.75,"L":12.19,"e":[[0.0,0.62,62],[0.62,0.5,60],[1.05,0.92,65],[1.97,3.57,62],[5.54,1.0,57],[6.54,0.65,53],[7.19,0.65,55],[7.84,0.97,50],[8.81,3.38,53]]},{"p":2.0,"L":12.22,"e":[[0.0,0.92,53],[0.92,0.95,55],[1.86,0.95,58],[2.81,0.97,62],[3.78,0.7,60],[4.49,0.7,58],[5.19,7.03,60]]},{"p":4.75,"L":12.3,"e":[[0.0,0.51,53],[0.51,0.5,55],[1.0,0.97,58],[1.97,1.0,62],[2.97,0.92,65],[3.89,0.92,67],[4.81,0.5,62],[5.3,0.5,58],[5.78,0.7,60],[6.49,5.81,58]]},{"p":2.0,"L":12.78,"e":[[0.0,1.03,53],[1.03,0.97,62],[2.0,0.97,65],[2.97,1.03,62],[4.0,1.81,62],[5.81,0.97,53],[6.78,2.0,62],[8.78,4.0,58]]},{"p":1.0,"L":8.64,"e":[[0.0,0.95,68],[0.95,0.5,65],[1.43,0.5,64],[1.87,0.65,63],[2.51,0.65,61],[3.16,0.62,58],[3.78,0.65,56],[4.43,0.5,53],[4.78,1.46,51],[6.24,2.4,62]]},{"p":1.0,"L":8.54,"e":[[0.0,1.05,64],[1.05,0.73,67],[1.78,0.73,66],[2.51,0.73,65],[3.24,1.0,64],[4.24,0.51,62],[4.76,0.52,60],[5.27,0.51,60],[5.78,2.76,59]]},{"p":4.25,"L":8.48,"e":[[0.0,1.05,52],[1.05,1.03,60],[2.08,6.4,57]]},{"p":1.25,"L":22.49,"e":[[0.0,0.65,48],[0.65,0.65,53],[1.3,0.5,56],[1.68,0.7,60],[2.38,0.7,65],[3.08,0.7,68],[3.78,0.92,65],[4.7,5.86,70],[10.57,0.7,70],[11.27,0.73,68],[12.0,0.5,65],[12.49,0.52,61],[13.0,0.5,58],[13.49,0.51,53],[14.0,0.5,49],[14.49,0.51,46],[15.0,1.0,46],[16.0,0.5,47],[16.49,1.0,48],[17.49,5.0,60]]},{"p":1.0,"L":10.75,"e":[[0.0,0.73,60],[0.73,0.68,64],[1.4,0.57,67],[1.97,0.97,70],[2.94,0.5,68],[3.43,0.97,64],[4.41,0.5,67],[4.89,5.86,65]]},{"p":5.25,"L":17.05,"e":[[0.0,0.57,50],[0.57,0.81,53],[1.38,0.7,55],[2.08,0.7,57],[2.78,0.62,58],[3.41,0.95,60],[4.35,0.92,62],[5.27,0.76,67],[6.03,0.73,61],[6.76,0.79,58],[7.54,1.0,60],[8.54,0.7,55],[9.25,1.59,58],[10.84,2.06,62],[12.89,1.05,55],[13.95,2.13,58],[16.08,0.97,60]]},{"p":4.25,"L":14.73,"e":[[0.0,0.57,65],[0.57,0.59,67],[1.16,0.84,61],[2.0,0.79,62],[2.78,0.73,69],[3.51,0.65,65],[4.16,1.03,61],[5.19,0.5,57],[5.41,0.76,65],[6.16,0.76,61],[6.92,0.68,57],[7.6,0.78,53],[8.38,0.76,60],[9.14,5.59,58]]},{"p":2.0,"L":20.0,"e":[[0.0,2.78,65],[2.78,0.73,62],[3.51,0.78,60],[4.3,0.76,58],[5.05,0.78,57],[5.84,0.81,62],[6.65,0.79,57],[7.43,0.76,56],[8.19,0.78,62],[8.97,0.81,56],[9.78,0.78,53],[10.57,4.03,55],[14.59,1.11,58],[15.7,0.54,60],[16.24,0.54,58],[16.78,0.54,63],[17.32,0.52,61],[17.84,0.51,62],[18.35,0.54,55],[18.89,1.11,58]]},{"p":5.0,"L":4.73,"e":[[0.0,1.02,62],[1.02,1.06,55],[2.08,0.54,58],[2.62,0.51,60],[3.13,1.6,58]]}];
 const noirPick=(minL,maxL,minN,maxN)=>{const c=NPH.filter(p=>p.L>=minL&&p.L<=maxL&&p.e.length>=minN&&p.e.length<=maxN);return pick(c.length?c:NPH);};
@@ -816,9 +717,9 @@ function composeNoir(prevPc,fixed,seed){
 }
 
 /* ================= audio ================= */
-let ac=null,mainBus,drumMain,master,toneLP,delayNode,noiseBuf,bus,drumBus,vinylNode=null,rainNode=null,fireNode=null,thunNode=null,ambBus,outVol,pinkBuf,brownBuf,keysNode=null,cityNode=null,noiseNode=null,jstreamNode=null,jchimeNode=null,jbellNode=null,wavesNode=null,birdsNode=null,shishiNode=null;
+let ac=null,mainBus,drumMain,master,toneLP,delayNode,noiseBuf,bus,drumBus,vinylNode=null,rainNode=null,fireNode=null,thunNode=null,ambBus,outVol,pinkBuf,brownBuf,keysNode=null,cityNode=null,jstreamNode=null,jchimeNode=null,jbellNode=null,wavesNode=null,birdsNode=null,shishiNode=null;
 const COARSE=!!(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches);
-const S={bass:window.__COZY_BASS!==undefined?!!window.__COZY_BASS:!COARSE,vol:50,vinyl:false,rain:false,fire:false,thunder:false,keys:false,city:false,noise:false,jstream:false,jchime:false,jbell:false,waves:false,birds:false,shishi:false,lite:false,auto:true};
+const S={bass:window.__COZY_BASS!==undefined?!!window.__COZY_BASS:!COARSE,vol:50,vinyl:false,rain:false,fire:false,thunder:false,keys:false,city:false,jstream:false,jchime:false,jbell:false,waves:false,birds:false,shishi:false,lite:false,auto:true};
 /* a level for each ambience sound, in percent (100 is the original level), and the saved settings */
 /* the keyboard and thunder are already the loudest ambience sounds, so they stay capped at the original level; the others can go up to 150% */
 const AVMAX={keys:100,thunder:100};
@@ -1153,15 +1054,6 @@ function startShishi(){
   const a=ambSrc(pinkBuf),hp=ambFilter('highpass',900,0.5),lp=ambFilter('lowpass',3200,0.5),ag=ac.createGain();ag.gain.value=0.02;
   a.connect(hp);hp.connect(lp);lp.connect(ag);ag.connect(n.out);n.srcs.push(a,ambLfo(ag.gain,0.3,0.012));
   n.timeouts.push(setTimeout(tock,(2+Math.random()*3)*1000));
-  return n;
-}
-function startNoise(){
-  const n={out:ac.createGain(),srcs:[],timers:[],timeouts:[]};n.out.gain.value=0.0001;n.out.connect(avNode('noise'));
-  n.out.gain.setTargetAtTime(1.7,ac.currentTime,1.2);
-  const a=ambSrc(pinkBuf),alp=ambFilter('lowpass',2400,0.5),ahp=ambFilter('highpass',90,0.5),ag=ac.createGain();ag.gain.value=0.2;
-  a.connect(ahp);ahp.connect(alp);alp.connect(ag);ag.connect(n.out);n.srcs.push(a,ambLfo(ag.gain,0.04,0.02));
-  const c=ambSrc(brownBuf),clp=ambFilter('lowpass',180,0.5),cg=ac.createGain();cg.gain.value=0.12;
-  c.connect(clp);clp.connect(cg);cg.connect(n.out);n.srcs.push(c);
   return n;
 }
 function startJStream(){
@@ -1645,47 +1537,6 @@ function scheduleNoirBar(T,t0,bar,sec,bi,e,st12,ending){
     uiQ.push({t:t,k:'note',m:n.m});
   });
   if(on('nvinyl')){const k=rnd(3);for(let i=0;i<k;i++)noiseHit(t0+Math.random()*u*12,0.01,'highpass',2500,0.5,(0.012+Math.random()*0.02)*avF('nvinyl'),drumBus);}
-}
-/* ---- shamisen: a plucked string (Karplus-Strong, tuned exactly by playback rate), a snap of the bachi plectrum, softened so it never gets shrill ---- */
-const shamCache={};
-function shamBuf(m){
-  const sr=ac.sampleRate,key=m+'_'+sr;
-  if(shamCache[key])return shamCache[key];
-  const f=mtof(m),N=Math.max(8,Math.round(sr/f-0.5)),secs=m<48?1.6:(m<60?1.2:0.9),len=Math.floor(sr*secs);
-  const buf=ac.createBuffer(1,len,sr),d=buf.getChannelData(0);
-  const line=new Float32Array(N);let prev=0;
-  for(let i=0;i<N;i++){const w=Math.random()*2-1;prev=prev*0.4+w*0.6;line[i]=prev;}
-  const pp=Math.max(1,Math.round(N*0.13)),e2=new Float32Array(N);
-  for(let i=0;i<N;i++)e2[i]=line[i]-0.7*line[(i+pp)%N];
-  for(let i=0;i<N;i++)line[i]=e2[i];
-  const rho=Math.pow(0.01,N/(sr*(m<48?1.2:(m<60?0.8:0.6))));
-  let idx=0,pk=0;
-  for(let n=0;n<len;n++){
-    const a=line[idx],b=line[(idx+1)%N];
-    d[n]=a;line[idx]=0.5*(a+b)*rho;idx=(idx+1)%N;
-    const x=Math.abs(a);if(x>pk)pk=x;
-  }
-  const g=0.9/Math.max(0.0001,pk),t18=Math.tanh(2.6);
-  for(let n=0;n<len;n++)d[n]=Math.tanh(d[n]*g*2.6)/t18*0.9;
-  buf._f=sr/(N+0.5);
-  shamCache[key]=buf;return buf;
-}
-function voiceSham(t,m,v,dur,bright,gain,slide,warm){
-  const buf=shamBuf(m),src=ac.createBufferSource();src.buffer=buf;
-  const rate=mtof(m)/buf._f;
-  if(slide){src.playbackRate.setValueAtTime(rate*0.972,t);src.playbackRate.linearRampToValueAtTime(rate,t+0.06);}else src.playbackRate.value=rate;
-  const G=gain||0.11;
-  const hp=ac.createBiquadFilter();hp.type='highpass';hp.frequency.value=70;
-  const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=bright?2600:2200;lp.Q.value=0.5;
-  const body=ac.createBiquadFilter();body.type='peaking';body.frequency.value=1500;body.Q.value=0.8;body.gain.value=5;
-  const g=ac.createGain(),end=t+Math.max(0.12,dur);
-  g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(G*v,t+0.002);
-  g.gain.setValueAtTime(G*v,end);g.gain.exponentialRampToValueAtTime(0.0001,end+0.14);
-  if(warm){const ls=ac.createBiquadFilter();ls.type='lowshelf';ls.frequency.value=320;ls.gain.value=9;src.connect(hp);hp.connect(ls);ls.connect(body);}
-  else{src.connect(hp);hp.connect(body);}
-  body.connect(lp);lp.connect(g);g.connect(bus);
-  src.start(t);src.stop(end+0.18);
-  if(!S.lite)noiseHit(t,0.03,'bandpass',1500,0.9,0.02*v,bus);
 }
 function drawNoir(dt,time){
   cx.setTransform(dpr,0,0,dpr,0,0);
