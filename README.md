@@ -1,6 +1,6 @@
 # Looplight
 
-Endless music in five moods: Cozy, Sunny Side, Night Drive, Jazz Noir and Scarlet Mist (a fifth, Yoru with Tsugaru shamisen and taiko, is switched off for now). Cozy and Sunny Side are generated as you listen; Jazz Noir and Scarlet Mist play recordings (Scarlet Mist falls back to its generated guzheng, flute and erhu if the recordings are missing). One page, no build step, works offline once opened.
+Endless music in five moods: Cozy, Sunny Side, Night Drive, Jazz Noir and Scarlet Mist (a fifth, Yoru with Tsugaru shamisen and taiko, is switched off for now). Cozy, Sunny Side and Night Drive are generated as you listen; Jazz Noir and Scarlet Mist play recordings (Scarlet Mist falls back to its generated guzheng, flute and erhu if the recordings are missing). One page, no build step, works offline once opened.
 
 Open it here: https://shaheen-music.github.io/looplight/
 
