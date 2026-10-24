@@ -38,7 +38,7 @@ html[data-mode="drive"]{--bg:#0c0720;--surface:#150d33;--surface-2:#20134a;--lin
 html[data-mode="china"]{--bg:#150a0c;--surface:#241214;--surface-2:#321a1b;--line:#4d2c2b;--fg:#f6ece0;--muted:#b9a39a;--lamp:#ee6c4d;--lamp-ink:#2b0d07;--lamp-soft:rgba(238,108,77,.15);--lamp-rgb:238,108,77;--past:#5e3a36}
 html[data-mode="groove"]{--bg:#0e1a17;--surface:#15251f;--surface-2:#1e352b;--line:#2e4a3c;--fg:#f4f0e2;--muted:#9fb7a8;--lamp:#b9e38c;--lamp-ink:#142208;--lamp-soft:rgba(185,227,140,.15);--lamp-rgb:185,227,140;--past:#3f6150}
 *{box-sizing:border-box}
-html:not([data-mode="cozy"]) .only-cozy,html:not([data-mode="groove"]) .only-groove,html:not([data-mode="japan"]) .only-japan,html:not([data-mode="noir"]) .only-noir{display:none}
+html:not([data-mode="cozy"]) .only-cozy,html:not([data-mode="groove"]) .only-groove,html:not([data-mode="japan"]) .only-japan,html:not([data-mode="noir"]) .only-noir,html:not([data-mode="drive"]) .only-drive{display:none}
 html:not([data-mode="japan"]):not([data-mode="china"]) .jc{display:none}
 .titlebox{display:flex;flex-direction:column;gap:2px}
 .tagline{margin:0;font:400 .78rem/1.3 var(--f-mono);letter-spacing:.06em;color:var(--muted)}
@@ -170,6 +170,10 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
       <button type="button" class="tog only-noir" id="tNVinyl" aria-pressed="false">Vinyl crackle</button>
       <button type="button" class="tog only-noir" id="tNRain" aria-pressed="false">Rain on the window</button>
       <button type="button" class="tog only-noir" id="tNCity" aria-pressed="false">Night street</button>
+      <button type="button" class="tog only-drive" id="tDCar" aria-pressed="false">Passing cars</button>
+      <button type="button" class="tog only-drive" id="tDHway" aria-pressed="false">Highway hum</button>
+      <button type="button" class="tog only-drive" id="tDRain" aria-pressed="false">Rain on the windshield</button>
+      <button type="button" class="tog only-drive" id="tDRadio" aria-pressed="false">Radio static</button>
     </div>
     <div class="ambvols" id="ambVols"></div>
     <form class="replay" id="replay"><label for="codeIn">Replay a tune</label><input id="codeIn" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="e.g. 1k9x2a-3" maxlength="14"><button type="submit" class="btn">Play code</button></form>
@@ -183,7 +187,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v76';
+const BUILD='looplight-v77';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -897,7 +901,7 @@ const S={bass:window.__COZY_BASS!==undefined?!!window.__COZY_BASS:!COARSE,vol:50
 /* the keyboard and thunder are already the loudest ambience sounds, so they stay capped at the original level; the others can go up to 150% */
 const AVMAX={keys:100,thunder:100};
 const maxAv=k=>AVMAX[k]||150;
-const AMBKEYS=['vinyl','rain','fire','thunder','keys','city','waves','birds','shishi','jstream','jchime','jbell','nvinyl','nrain','ncity'];
+const AMBKEYS=['vinyl','rain','fire','thunder','keys','city','waves','birds','shishi','jstream','jchime','jbell','nvinyl','nrain','ncity','dcar','dhway','drain','dradio'];
 const AV={};AMBKEYS.forEach(k=>{AV[k]=100;});
 const avF=k=>(AV[k]===undefined?100:AV[k])/100;
 if(SAVED){
@@ -912,12 +916,12 @@ if(SAVED){
 function saveSettings(){
   try{const o={mode:mode,vol:S.vol,bass:S.bass,auto:S.auto,av:Object.assign({},AV)};AMBKEYS.forEach(k=>{o[k]=!!S[k];});localStorage.setItem(STORE_KEY,JSON.stringify(o));}catch(e){}
 }
-const MODE_OF={vinyl:'cozy',rain:'cozy',fire:'cozy',thunder:'cozy',keys:'groove',city:'groove',waves:'groove',birds:'groove',shishi:'japan',jstream:'japan',jchime:'japan',jbell:'japan',nvinyl:'noir',nrain:'noir',ncity:'noir'};
+const MODE_OF={vinyl:'cozy',rain:'cozy',fire:'cozy',thunder:'cozy',keys:'groove',city:'groove',waves:'groove',birds:'groove',shishi:'japan',jstream:'japan',jchime:'japan',jbell:'japan',nvinyl:'noir',nrain:'noir',ncity:'noir',dcar:'drive',dhway:'drive',drain:'drive',dradio:'drive'};
 const inSide=k=>MODE_OF[k]===mode||(mode==='china'&&MODE_OF[k]==='japan');
 const on=k=>!!S[k]&&inSide(k);
 const volGain=()=>Math.pow(S.vol/100,1.5);
 const INTERNAL=0.64;
-const musicGain=()=>(window.__muted?0:1)*INTERNAL*((on('rain')||on('fire')||on('thunder')||on('keys')||on('city')||on('waves')||on('birds')||on('shishi')||on('jstream')||on('jchime')||on('jbell')||on('nrain')||on('ncity'))?0.85:1);
+const musicGain=()=>(window.__muted?0:1)*INTERNAL*((on('rain')||on('fire')||on('thunder')||on('keys')||on('city')||on('waves')||on('birds')||on('shishi')||on('jstream')||on('jchime')||on('jbell')||on('nrain')||on('ncity')||on('dcar')||on('dhway')||on('drain')||on('dradio'))?0.85:1);
 function makeImpulse(sec,decay){
   const len=Math.floor(ac.sampleRate*sec),buf=ac.createBuffer(2,len,ac.sampleRate);
   for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay);}
@@ -974,7 +978,7 @@ function makeLoopNoise(sec,kind){
   }
   return buf;
 }
-let nrainNode=null,ncityNode=null,nvinylNode=null;
+let nrainNode=null,ncityNode=null,nvinylNode=null,dcarNode=null,dhwayNode=null,drainNode=null,dradioNode=null;
 const avNodes={};
 function avNode(k){if(!avNodes[k]){const g=ac.createGain();g.gain.value=avF(k);g.connect(ambBus);avNodes[k]=g;}return avNodes[k];}
 function applyAmbVol(k){
@@ -1019,6 +1023,73 @@ function startRain(key){
   }
   let nd=ac.currentTime+0.1;
   n.timers.push(setInterval(()=>{const now=ac.currentTime;if(nd<now)nd=now+0.02;while(nd<now+1.2){drop(nd);nd+=0.03+Math.random()*0.07;}},250));
+  return n;
+}
+/* ---- Night Drive extras ---- */
+/* cars going by in the dark: an engine note that falls as it passes, tyre hiss, and the sound crossing from one side to the other */
+function startCars(){
+  const n={out:ac.createGain(),srcs:[],timers:[],timeouts:[]};n.out.gain.value=0.0001;n.out.connect(avNode('dcar'));
+  n.out.gain.setTargetAtTime(1.5,ac.currentTime,1.2);
+  function car(){
+    const t=ac.currentTime+0.05,len=2.4+Math.random()*2,dir=Math.random()<0.5?-1:1,f0=70+Math.random()*50;
+    const pn=ambPan();if(pn.pan){pn.pan.setValueAtTime(-0.85*dir,t);pn.pan.linearRampToValueAtTime(0.85*dir,t+len);}
+    pn.connect(n.out);
+    const env=ac.createGain();env.gain.setValueAtTime(0.0001,t);env.gain.linearRampToValueAtTime(1,t+len*0.5);env.gain.linearRampToValueAtTime(0.0001,t+len);env.connect(pn);
+    const o=ac.createOscillator();o.type='sawtooth';o.frequency.setValueAtTime(f0*1.12,t);o.frequency.linearRampToValueAtTime(f0*0.88,t+len);
+    const olp=ambFilter('lowpass',420,0.6),og=ac.createGain();og.gain.value=0.05;o.connect(olp);olp.connect(og);og.connect(env);o.start(t);o.stop(t+len+0.1);
+    const s1=ac.createBufferSource();s1.buffer=pinkBuf;
+    const f1=ambFilter('bandpass',500,0.9);f1.frequency.setValueAtTime(420,t);f1.frequency.exponentialRampToValueAtTime(1100,t+len*0.5);f1.frequency.exponentialRampToValueAtTime(380,t+len);
+    const g1=ac.createGain();g1.gain.value=0.28;s1.connect(f1);f1.connect(g1);g1.connect(env);s1.start(t,Math.random()*8);s1.stop(t+len+0.1);
+    const s2=ac.createBufferSource();s2.buffer=pinkBuf;const f2=ambFilter('bandpass',2000,0.8),g2=ac.createGain();g2.gain.value=0.08;
+    s2.connect(f2);f2.connect(g2);g2.connect(env);s2.start(t,Math.random()*8);s2.stop(t+len+0.1);
+    n.timeouts.push(setTimeout(car,(5+Math.random()*9)*1000));
+  }
+  n.timeouts.push(setTimeout(car,(1.2+Math.random()*2)*1000));
+  return n;
+}
+/* the steady low rumble inside a moving car, with a soft rush of wind and a faint beat as the tyres cross the road joins */
+function startHighway(){
+  const n={out:ac.createGain(),srcs:[],timers:[],timeouts:[]};n.out.gain.value=0.0001;n.out.connect(avNode('dhway'));
+  n.out.gain.setTargetAtTime(1.6,ac.currentTime,1.5);
+  const a=ambSrc(brownBuf),alp=ambFilter('lowpass',190,0.5),ag=ac.createGain();ag.gain.value=0.3;
+  a.connect(alp);alp.connect(ag);ag.connect(n.out);n.srcs.push(a,ambLfo(ag.gain,0.07,0.04));
+  const b=ambSrc(pinkBuf),bbp=ambFilter('bandpass',650,0.5),bg=ac.createGain();bg.gain.value=0.025;
+  b.connect(bbp);bbp.connect(bg);bg.connect(n.out);n.srcs.push(b,ambLfo(bg.gain,0.13,0.01));
+  const c=ambSrc(brownBuf),clp=ambFilter('lowpass',110,0.5),cg=ac.createGain();cg.gain.value=0.0;
+  c.connect(clp);clp.connect(cg);cg.connect(n.out);n.srcs.push(c,ambLfo(cg.gain,1.7,0.07));
+  return n;
+}
+/* rain on the glass, and a wiper that sweeps across every few seconds */
+function startWindshield(){
+  const n=startRain('drain');
+  function wipe(){
+    const t=ac.currentTime+0.05,len=1.1;
+    const s=ac.createBufferSource();s.buffer=pinkBuf;
+    const f=ambFilter('bandpass',1400,1.2);f.frequency.setValueAtTime(900,t);f.frequency.linearRampToValueAtTime(1900,t+len*0.5);f.frequency.linearRampToValueAtTime(900,t+len);
+    const g=ac.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(0.07,t+len*0.45);g.gain.linearRampToValueAtTime(0.0001,t+len);
+    const pn=ambPan();if(pn.pan){pn.pan.value=-0.3;}
+    s.connect(f);f.connect(g);g.connect(pn);pn.connect(n.out);s.start(t,Math.random()*8);s.stop(t+len+0.1);
+    n.timeouts.push(setTimeout(wipe,3400+Math.random()*1200));
+  }
+  n.timeouts.push(setTimeout(wipe,1500));
+  return n;
+}
+/* an old car radio between stations: a faint hiss that drifts, with the odd tuning chirp */
+function startRadio(){
+  const n={out:ac.createGain(),srcs:[],timers:[],timeouts:[]};n.out.gain.value=0.0001;n.out.connect(avNode('dradio'));
+  n.out.gain.setTargetAtTime(1,ac.currentTime,1.2);
+  const a=ambSrc(pinkBuf),ahp=ambFilter('highpass',1200,0.5),alp=ambFilter('lowpass',5200,0.5),ag=ac.createGain();ag.gain.value=0.02;
+  a.connect(ahp);ahp.connect(alp);alp.connect(ag);ag.connect(n.out);n.srcs.push(a,ambLfo(ag.gain,0.09,0.012),ambLfo(alp.frequency,0.05,1500));
+  function chirp(){
+    const t=ac.currentTime+0.05,len=0.5+Math.random()*0.6,f0=300+Math.random()*900,f1=f0*(Math.random()<0.5?2.2:0.45);
+    const o=ac.createOscillator();o.type='sine';o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+len);
+    const lp=ambFilter('lowpass',2400,0.5),g=ac.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(0.012,t+0.05);g.gain.linearRampToValueAtTime(0.0001,t+len);
+    const pn=ambPan();o.connect(lp);lp.connect(g);g.connect(pn);pn.connect(n.out);o.start(t);o.stop(t+len+0.05);
+    const s=ac.createBufferSource();s.buffer=pinkBuf;const bp=ambFilter('bandpass',2600,0.7),sg=ac.createGain();sg.gain.setValueAtTime(0.0001,t);sg.gain.linearRampToValueAtTime(0.05,t+0.04);sg.gain.linearRampToValueAtTime(0.0001,t+len+0.2);
+    s.connect(bp);bp.connect(sg);sg.connect(pn);s.start(t,Math.random()*8);s.stop(t+len+0.3);
+    n.timeouts.push(setTimeout(chirp,(9+Math.random()*16)*1000));
+  }
+  n.timeouts.push(setTimeout(chirp,(4+Math.random()*5)*1000));
   return n;
 }
 function startFire(){
@@ -1275,6 +1346,10 @@ function applyTexture(){
   if(!on('nvinyl')&&nvinylNode){const n=nvinylNode;nvinylNode=null;n.g.gain.setTargetAtTime(0,ac.currentTime,0.1);setTimeout(()=>{try{n.src.stop();}catch(e){}},700);}
   sw('nrain',nrainNode,()=>startRain('nrain'),v=>{nrainNode=v;});
   sw('ncity',ncityNode,()=>startCity('ncity'),v=>{ncityNode=v;});
+  sw('dcar',dcarNode,startCars,v=>{dcarNode=v;});
+  sw('dhway',dhwayNode,startHighway,v=>{dhwayNode=v;});
+  sw('drain',drainNode,startWindshield,v=>{drainNode=v;});
+  sw('dradio',dradioNode,startRadio,v=>{dradioNode=v;});
   sw('rain',rainNode,startRain,v=>{rainNode=v;});
   sw('fire',fireNode,startFire,v=>{fireNode=v;});
   sw('thunder',thunNode,startThunder,v=>{thunNode=v;});
@@ -2220,7 +2295,7 @@ function nextNow(){
 
 /* ================= interface ================= */
 const labEls=[];
-const AMB_LABEL={vinyl:'Vinyl crackle',rain:'Rain',fire:'Fireplace',thunder:'Distant thunder',keys:'Keyboard',city:'Street hum',waves:'Ocean waves',birds:'Birdsong',shishi:'Bamboo fountain',jstream:'Garden stream',jchime:'Wind chimes',jbell:'Temple bell',nvinyl:'Vinyl crackle',nrain:'Rain on the window',ncity:'Night street'};
+const AMB_LABEL={vinyl:'Vinyl crackle',rain:'Rain',fire:'Fireplace',thunder:'Distant thunder',keys:'Keyboard',city:'Street hum',waves:'Ocean waves',birds:'Birdsong',shishi:'Bamboo fountain',jstream:'Garden stream',jchime:'Wind chimes',jbell:'Temple bell',nvinyl:'Vinyl crackle',nrain:'Rain on the window',ncity:'Night street',dcar:'Passing cars',dhway:'Highway hum',drain:'Rain on the windshield',dradio:'Radio static'};
 /* one small slider for each ambience sound that is switched on, on the side you are on */
 function renderAmbVols(){
   const box=$('ambVols');if(!box)return;
@@ -2389,7 +2464,7 @@ bindToggle('tFire','fire',applyTexture);
 bindToggle('tThunder','thunder',applyTexture);
 bindToggle('tKeys','keys',applyTexture);
 bindToggle('tBass','bass',applyBass);
-[['tAuto','auto'],['tBass','bass'],['tVinyl','vinyl'],['tRain','rain'],['tFire','fire'],['tThunder','thunder'],['tKeys','keys'],['tCity','city'],['tWaves','waves'],['tBirds','birds'],['tShishi','shishi'],['tJStream','jstream'],['tJChime','jchime'],['tJBell','jbell'],['tNVinyl','nvinyl'],['tNRain','nrain'],['tNCity','ncity']].forEach(p=>$(p[0]).setAttribute('aria-pressed',S[p[1]]?'true':'false'));
+[['tAuto','auto'],['tBass','bass'],['tVinyl','vinyl'],['tRain','rain'],['tFire','fire'],['tThunder','thunder'],['tKeys','keys'],['tCity','city'],['tWaves','waves'],['tBirds','birds'],['tShishi','shishi'],['tJStream','jstream'],['tJChime','jchime'],['tJBell','jbell'],['tNVinyl','nvinyl'],['tNRain','nrain'],['tNCity','ncity'],['tDCar','dcar'],['tDHway','dhway'],['tDRain','drain'],['tDRadio','dradio']].forEach(p=>$(p[0]).setAttribute('aria-pressed',S[p[1]]?'true':'false'));
 $('vol').value=String(S.vol);$('volOut').textContent=S.vol;
 bindToggle('tCity','city',applyTexture);
 bindToggle('tWaves','waves',applyTexture);
@@ -2401,6 +2476,10 @@ bindToggle('tJBell','jbell',applyTexture);
 bindToggle('tNVinyl','nvinyl',applyTexture);
 bindToggle('tNRain','nrain',applyTexture);
 bindToggle('tNCity','ncity',applyTexture);
+bindToggle('tDCar','dcar',applyTexture);
+bindToggle('tDHway','dhway',applyTexture);
+bindToggle('tDRain','drain',applyTexture);
+bindToggle('tDRadio','dradio',applyTexture);
 document.querySelectorAll('button').forEach(b=>b.addEventListener('click',e=>{if(e.detail>0)b.blur();}));
 document.addEventListener('keydown',e=>{
   if(e.ctrlKey||e.metaKey||e.altKey)return;
