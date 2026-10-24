@@ -183,7 +183,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v74';
+const BUILD='looplight-v75';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -214,7 +214,7 @@ const MODES={
     plan:['Jo','Ha','Ha 2','Kyu','Kyu 2','Return','Variation','Coda'],
     adj:['Quiet','Autumn','Moonlit','Misty','Silent','Distant','Willow','Winter','Morning','Gentle','Falling','Stone'],
     noun:['Sakura','Temple','Garden','Crane','Lantern','Bamboo','Pond','Mountain','Koto','Teahouse','Moon','River']},
-  drive:{title:'Night Drive',tagline:'Synths · neon road · after midnight',flipTo:'Flip to Cozy',bpm:[88,104],swing:[0,0.04],minorP:1,
+  drive:{title:'Night Drive',tagline:'Synths · neon road · after midnight',flipTo:'Flip to Cozy',bpm:[86,92],swing:[0,0],minorP:1,
     voices:['synth','pluck'],trim:1.15,reverb:0.5,tone:6000,hatFrom:0,kickFrom:0,hatMul:1.2,kickV:1.1,snare:true,ghost:false,bassDur:[2.2,1.5],
     plan:['Intro','Drive','Drive 2','Break','Break 2','Return','Variation','Outro'],
     adj:['Neon','Midnight','Chrome','Velvet','Electric','Violet','Last','Endless','Silent','Fading','Pink','Distant','Hollow','Glass'],
@@ -247,6 +247,7 @@ const HATV_G=[0.7,0.35,0.55,0.4,0.7,0.35,0.55,0.5];
 const MAJOR=[0,2,4,5,7,9,11],MINOR=[0,2,3,5,7,8,10];
 /* one chord per bar, four bars; degrees stack in thirds so every chord is a proper seventh chord */
 const PROG_MAJOR=[[0,5,1,4],[1,4,0,5],[0,3,2,5],[0,2,3,4],[5,3,0,4],[2,5,1,4],[0,3,1,4],[3,2,1,0],[5,1,4,0],[1,4,2,5],[0,4,5,3],[3,4,2,5],[0,5,3,4],[0,1,3,4]];
+const PROG_D=[[0,5,2,6],[0,5,2,6],[0,5,2,6],[0,6,5,6],[0,5,3,6],[0,3,5,6],[0,5,2,4]];
 const PROG_MINOR=[[0,5,2,6],[0,3,6,2],[0,6,5,6],[0,3,0,4],[0,6,3,5],[0,5,3,4],[1,4,0,0],[3,6,2,5],[0,2,5,6],[0,3,4,0],[5,6,0,0]];
 /* melody rhythms on an eighth-note grid (8 steps a bar); odd steps get the swing */
 const RHY=[[0,3,6],[0,2,5],[1,4,6],[0,3,4,7],[2,5],[0,4,6],[0,3,7],[1,3,6],[0,2,3,6],[0,3,4,5,7],[1,2,4,6],[0,2,4,6,7],[1,3,4,6],[0,2,3,5,7],[0,1,4,6],[2,3,6],[0,4,5,7]];
@@ -305,10 +306,10 @@ function varyPhrase(T,P){
 }
 const KEYS=[0,2,3,5,7,9,10];
 function parseCode(str){
-  const m=/^\s*([0-9a-z]{1,8})\s*[-\s]\s*([0-6])\s*([gjnsc]?)\s*$/i.exec(str||'');
+  const m=/^\s*([0-9a-z]{1,8})\s*[-\s]\s*([0-6])\s*([gjnscd]?)\s*$/i.exec(str||'');
   const sf=m&&m[3]?m[3].toLowerCase():'';
   if(m&&/^[jst]$/i.test(m[3]||''))return null;
-  return m?{seed:parseInt(m[1],36),ki:+m[2],mode:sf==='g'?'groove':(sf==='j'||sf==='s'||sf==='t')?'japan':sf==='n'?'noir':sf==='c'?'china':'cozy',style:sf==='s'?'sham':sf==='t'?'tsu':'koto',text:m[1].toLowerCase()+'-'+m[2]+sf}:null;
+  return m?{seed:parseInt(m[1],36),ki:+m[2],mode:sf==='g'?'groove':sf==='d'?'drive':(sf==='j'||sf==='s'||sf==='t')?'japan':sf==='n'?'noir':sf==='c'?'china':'cozy',style:sf==='s'?'sham':sf==='t'?'tsu':'koto',text:m[1].toLowerCase()+'-'+m[2]+sf}:null;
 }
 /* each new Cozy or Sunny Side tune is picked to differ from the one before it in at least three ways (chords, drums, bass, accompaniment, chord colour, lead sound, major/minor) while keeping the tempo within 3 BPM of it, so the pace stays steady; a saved tune code still replays exactly */
 const lastSig={};
@@ -336,16 +337,17 @@ function composeInner(prevPc,fixed,seed,m){
   if(fixed)ki=fixed.ki;else if(KEYS[ki]===prevPc)ki=(ki+1)%7;
   const keyPc=KEYS[ki];
   const iv=minor?MINOR:MAJOR,root=48+keyPc;
-  const prog=window.__PROG||pick(G?(minor?PROG_G_MINOR:PROG_G_MAJOR):(minor?PROG_MINOR:PROG_MAJOR));
+  const prog=window.__PROG||(m==='drive'?pick(PROG_D):pick(G?(minor?PROG_G_MINOR:PROG_G_MAJOR):(minor?PROG_MINOR:PROG_MAJOR)));
   /* chord colour: mostly seventh chords, sometimes added-ninth, sixth or plain triads */
   const CO=window.__CO||pick([[0,2,4,6],[0,2,4,6],[0,2,4,6],[0,2,4,8],[0,2,4,8],[0,2,4,5],[0,2,4,7]]);
   const T={
-    mode:m,code:seed.toString(36)+'-'+ki+(G?'g':''),name:pick(cfg.adj)+' '+pick(cfg.noun),minor:minor,keyPc:keyPc,iv:iv,root:root,prog:prog,
+    mode:m,code:seed.toString(36)+'-'+ki+(m==='drive'?'d':G?'g':''),name:pick(cfg.adj)+' '+pick(cfg.noun),minor:minor,keyPc:keyPc,iv:iv,root:root,prog:prog,
     bpm:cfg.bpm[0]+rnd(cfg.bpm[1]-cfg.bpm[0]+1),swing:rr(cfg.swing[0],cfg.swing[1]),
     melVoice:pick(cfg.voices),
     drum:(G?DRUMS_G:DRUMS)[pick(['A','B','C','D','E','F'])],comp:pick(G?COMP_G:COMP),bassPat:pick(G?BASSPAT_G:BASSPAT),
     bus:null,dbus:null
   };
+  if(m==='drive')T.drum={k:[0,4],r:[2,6]};
   T.chords=prog.map(d=>CO.map(o=>{let m=idxMidi(root,iv,d+o);while(m<50)m+=12;while(m>=70)m-=12;return m;}).sort((a,b)=>a-b));
   T.bass=prog.map(d=>{let m=idxMidi(root,iv,d);while(m>=55)m-=12;while(m<43)m+=12;return m;});
   T.chordPcs=prog.map(d=>new Set(CO.map(o=>pcOf(idxMidi(root,iv,d+o),keyPc))));
@@ -1408,13 +1410,17 @@ const SMP_CFG={
   dtr:{sus:false,a:0.008,rel:0.4,lp:2400,norm:'peak',target:0.35},
   piano:{sus:false,a:0.004,rel:0.5,norm:'peak',target:0.3},
   bass:{sus:false,a:0.006,rel:0.25,norm:'peak',target:0.4},
+  dpad:{sus:true,a:0.35,rel:0.7,norm:'rms',target:0.05},
+  dcry:{sus:false,a:0.004,rel:0.25,norm:'peak',target:0.2},
+  dbas:{sus:true,a:0.006,rel:0.16,norm:'rms',target:0.1},
+  dlead:{sus:true,a:0.012,rel:0.3,vib:5,norm:'rms',target:0.06},
   flute:{sus:true,a:0.03,rel:0.3,vib:9,lp:3200,norm:'rms',target:0.062},
   erhu:{sus:true,a:0.04,rel:0.35,vib:24,lp:2500,norm:'rms',target:0.058}
 };
 let SMP=null,loadingBand=false,smpLoad={};
 function b64buf(b){const bin=atob(b),n=bin.length,u=new Uint8Array(n);for(let i=0;i<n;i++)u[i]=bin.charCodeAt(i);return u.buffer;}
 /* each side only decodes the recordings it plays: koto, shakuhachi and taiko for Yoru, the saxophone for Jazz Noir */
-const smpWant=()=>(mode==='japan'?['koto','shaku','taiko']:mode==='noir'?(noirRec?[]:['sax','saxp','saxk','saxb','piano','bass']):mode==='china'?(noirRec?[]:['dtr','flute','erhu']):[]);
+const smpWant=()=>(mode==='japan'?['koto','shaku','taiko']:mode==='noir'?(noirRec?[]:['sax','saxp','saxk','saxb','piano','bass']):mode==='china'?(noirRec?[]:['dtr','flute','erhu']):mode==='drive'?['dpad','dcry','dbas','dlead']:[]);
 const smpHas=i=>!!(SMP&&SMP[i]&&SMP[i].keys.length);
 const smpScript={};
 /* each instrument's recordings are their own small file, fetched the first time a side needs them (and kept for offline use) */
@@ -1865,6 +1871,7 @@ function scheduleBar(t0){
   if(T.mode==='noir'){scheduleNoirBar(T,t0,bar,sec,bi,e,st,ending);uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
   if(T.mode==='china'){scheduleChinaBar(T,t0,bar,sec,bi,e,st,ending);uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
   if(T.mode==='japan'){scheduleJapanBar(T,t0,bar,sec,bi,e,st,ending);uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
+  if(T.mode==='drive'){scheduleDriveBar(T,t0,bar,sec,bi,e,st,ending,dropOut);uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
   T.comp.forEach((s,i)=>{
     const t=st(s),v=i===0?0.7:0.4;
     const ch=T.chords[bi],cn=(i===0&&!S.lite)?ch.length:3;
@@ -1896,6 +1903,29 @@ function scheduleBar(t0){
   }
   if(on('vinyl')){const n=rnd(3);for(let i=0;i<n;i++)noiseHit(t0+Math.random()*e*8,0.01,'highpass',2500,0.5,(0.012+Math.random()*0.02)*avF('vinyl'),drumBus);}
   uiQ.push({t:t0,k:'bar',bar:bar,tune:T});
+}
+/* Night Drive: a warm synth pad holds each chord, a crystal arpeggio runs in sixteenths over it, a synth bass pulses in eighths and a lead sings the tune over a steady kick, snare and hats; every tune picks its own key, chords and melody */
+function scheduleDriveBar(T,t0,bar,sec,bi,e,st,ending,dropOut){
+  const cfg=MODES.drive,hum=()=>(Math.random()-0.5)*0.012;
+  const tri=[0,2,4].map(o=>{let m=idxMidi(T.root,T.iv,T.prog[bi]+o);while(m<50)m+=12;while(m>=66)m-=12;return m;}).sort((a,b)=>a-b);
+  let rb=idxMidi(T.root,T.iv,T.prog[bi]);while(rb>=40)rb-=12;while(rb<28)rb+=12;
+  tri.forEach(m=>playSample('dpad',t0+hum(),m,0.5,e*8,bus));
+  playSample('dpad',t0,tri[0]-12,0.4,e*8,bus);
+  if(!S.lite&&(sec>0||bi>=2)){
+    const seq=[tri[0],tri[2],tri[1],tri[2]+12,tri[0]+12,tri[2],tri[1],tri[0]];
+    for(let k=0;k<16;k++)playSample('dcry',st(k*0.5)+hum(),seq[k%8]+(((k>>3)&1)?12:0),k%4===0?0.62:0.42,0.2,bus);
+  }
+  if(bar>=1&&!dropOut)for(let k=0;k<8;k++)playSample('dbas',st(k)+hum()*0.5,rb+((k===3||k===6)?12:0),k%2===0?0.95:0.72,e*0.9,bus);
+  const pk=PLAN[sec].ph,ph=pk?T[pk]:(sec===0&&bi>=2?T.A:null);
+  if(ph)ph[bi].forEach((n,i,arr)=>{
+    const nx=arr[i+1]?arr[i+1].step:8,d=Math.max(0.2,(nx-n.step)*e*0.92),t=st(n.step)+hum();
+    playSample('dlead',t,n.midi,pk?(n.step===0?0.8:0.68):0.45,d,bus);uiQ.push({t:t,k:'note',m:n.midi});
+  });
+  if(bar>=4&&!dropOut){
+    if(!S.lite)for(let k=0;k<8;k++)hat(st(k),HATV_G[k]*cfg.hatMul);
+    T.drum.k.forEach(k=>{const t=st(k);kick(t,(k===0?1:0.8)*cfg.kickV);uiQ.push({t:t,k:'kick'});});
+    T.drum.r.forEach(k=>snare(st(k),1));
+  }
 }
 function advance(){
   if(barNum===28&&!nextTune)nextTune=compose(tune.keyPc,null,mode);
@@ -1938,7 +1968,7 @@ document.addEventListener('visibilitychange',()=>{if(playing&&document.visibilit
    If full recordings are in audio/jazz-noir/ (noir-01.mp3 ... noir-30.mp3), Jazz Noir plays them, shuffled and crossfaded, forever.
    With none there, it falls back to the generated sax band. */
 /* Scarlet Mist plays recordings the same way (audio/silk-bamboo/s64-01.mp3 ...). The state below is always the current side's; it is parked and restored when the side changes. */
-const REC={noir:{dir:'audio/jazz-noir/noir-',max:66,mb:2.6,title:'Jazz Noir',meta:'Tenor sax, piano, bass & brushes'},drive:{dir:'audio/night-drive/nd2-',max:18,mb:2.2,title:'Night Drive',meta:'Synths, drum machine & bass'},china:{dir:'audio/silk-bamboo/s64-',max:42,mb:3.4,title:'Scarlet Mist',meta:'Guzheng, flute & erhu'}};
+const REC={noir:{dir:'audio/jazz-noir/noir-',max:66,mb:2.6,title:'Jazz Noir',meta:'Tenor sax, piano, bass & brushes'},china:{dir:'audio/silk-bamboo/s64-',max:42,mb:3.4,title:'Scarlet Mist',meta:'Guzheng, flute & erhu'}};
 const recMode=()=>!!REC[mode];
 const NOIR_MAX=66,noirPath=i=>REC[mode].dir+String(i+1).padStart(2,'0')+'.mp3';
 let noirRec=null,noirList=[],noirProbing=null,noirDecks=null,noirAct=0,noirQ=[],noirXf=false,noirNo=0;
@@ -2038,13 +2068,10 @@ const NOIR_NAMES=(()=>{const adj=['Velvet','Smoky','Midnight','Amber','Blue','La
   const out=[],used=new Set(),r=mulberry(20261020);
   for(let i=0;i<NOIR_MAX;i++){let n,k=0;do{n=adj[Math.floor(r()*adj.length)]+' '+noun[Math.floor(r()*noun.length)];k++;}while(used.has(n)&&k<50);used.add(n);out.push(n);}
   return out;})();
-const DRIVE_NAMES=(()=>{const adj=MODES.drive.adj,noun=MODES.drive.noun,out=[],used=new Set(),r=mulberry(20261024);
-  for(let i=0;i<REC.drive.max;i++){let n,k=0;do{n=adj[Math.floor(r()*adj.length)]+' '+noun[Math.floor(r()*noun.length)];k++;}while(used.has(n)&&k<50);used.add(n);out.push(n);}
-  return out;})();
 const CHINA_NAMES=(()=>{const adj=MODES.china.adj,noun=MODES.china.noun,out=[],used=new Set(),r=mulberry(20261021);
   for(let i=0;i<REC.china.max;i++){let n,k=0;do{n=adj[Math.floor(r()*adj.length)]+' '+noun[Math.floor(r()*noun.length)];k++;}while(used.has(n)&&k<50);used.add(n);out.push(n);}
   return out;})();
-function noirUi(){noirBarShown=-1;noirOffUi();$('codeBtn').parentElement.style.display=(recMode()&&noirRec)?'none':'';if(!recMode()||!noirRec)return;const d=noirDecks&&noirDecks[noirAct],nm=mode==='china'?CHINA_NAMES:mode==='drive'?DRIVE_NAMES:NOIR_NAMES;$('title').textContent=d&&d.idx>=0?nm[d.idx]:REC[mode].title;$('meta').textContent=REC[mode].meta;$('codeTxt').textContent='recording';recMedia();}
+function noirUi(){noirBarShown=-1;noirOffUi();$('codeBtn').parentElement.style.display=(recMode()&&noirRec)?'none':'';if(!recMode()||!noirRec)return;const d=noirDecks&&noirDecks[noirAct],nm=mode==='china'?CHINA_NAMES:NOIR_NAMES;$('title').textContent=d&&d.idx>=0?nm[d.idx]:REC[mode].title;$('meta').textContent=REC[mode].meta;$('codeTxt').textContent='recording';recMedia();}
 function noirLoad(d){const i=noirNext();d.idx=i;d.el.src=noirPath(i);d.el.load();}
 function noirStart(){
   if(!recMode()||!noirRec||!playing)return;
@@ -2139,7 +2166,7 @@ function recMedia(){
   try{
     if(!('mediaSession' in navigator)||!recMode()||!noirRec||!noirDecks)return;
     const d=noirDecks[noirAct];if(!d||d.idx<0)return;
-    const nm=(mode==='china'?CHINA_NAMES:mode==='drive'?DRIVE_NAMES:NOIR_NAMES)[d.idx],key=mode+':'+d.idx;
+    const nm=(mode==='china'?CHINA_NAMES:NOIR_NAMES)[d.idx],key=mode+':'+d.idx;
     if(recMetaKey!==key&&typeof MediaMetadata!=='undefined'){
       navigator.mediaSession.metadata=new MediaMetadata({title:nm,artist:'Looplight',album:FLIP_NAME[mode],artwork:[{src:'icons/icon-192.png',sizes:'192x192',type:'image/png'},{src:'icons/icon-512.png',sizes:'512x512',type:'image/png'}]});
       recMetaKey=key;metaTune=null;
@@ -2338,7 +2365,7 @@ function renderTune(T,bar){
     updateMediaSession();
     $('title').textContent=T.name;
     $('codeTxt').textContent=T.code;
-    $('meta').textContent=NOTE[T.keyPc]+' '+(T.mode==='china'?(CNAMES[T.scaleName]+' · '+T.bpm+' BPM · Guzheng, bamboo flute & erhu'):T.mode==='japan'?(JNAMES[T.scaleName]+' · '+T.bpm+' BPM · '+(T.style==='tsu'?'Tsugaru shamisen & taiko':T.style==='sham'?'Shamisen, koto & shakuhachi':'Koto & shakuhachi')):T.mode==='noir'?(T.minor?'minor':'major')+' · '+T.bpm+' BPM · Tenor sax & piano · '+(smpHas('sax')?'recorded sax ':'SYNTH FALLBACK ')+BUILD.replace('looplight-',''):(T.minor?'minor':'major')+' · '+T.bpm+' BPM · '+Math.round(T.swing*100)+'% swing');
+    $('meta').textContent=NOTE[T.keyPc]+' '+(T.mode==='china'?(CNAMES[T.scaleName]+' · '+T.bpm+' BPM · Guzheng, bamboo flute & erhu'):T.mode==='drive'?((T.minor?'minor':'major')+' · '+T.bpm+' BPM · Synth pad, arpeggio & lead'):T.mode==='japan'?(JNAMES[T.scaleName]+' · '+T.bpm+' BPM · '+(T.style==='tsu'?'Tsugaru shamisen & taiko':T.style==='sham'?'Shamisen, koto & shakuhachi':'Koto & shakuhachi')):T.mode==='noir'?(T.minor?'minor':'major')+' · '+T.bpm+' BPM · Tenor sax & piano · '+(smpHas('sax')?'recorded sax ':'SYNTH FALLBACK ')+BUILD.replace('looplight-',''):(T.minor?'minor':'major')+' · '+T.bpm+' BPM · '+Math.round(T.swing*100)+'% swing');
   }
   noirUi();
   $('eyebrow').textContent=started?'Now playing':'Up first';
