@@ -132,7 +132,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
     <div class="topright"><p class="status" id="status">Ready</p><span class="flips" id="flips"></span></div>
   </header>
 
-  <section class="scene"><canvas id="scene" role="img" aria-label="An animated scene that moves with the music: a rainy night window in Cozy mode, a sunny golden-hour hillside in Sunny Side mode, a moonlit Japanese garden with a pagoda and falling cherry petals in Japanese Classical mode."></canvas></section>
+  <section class="scene"><canvas id="scene" role="img" aria-label="An animated scene that moves with the music: a rainy night window in Cozy mode, a sunny golden-hour hillside in Sunny Side mode, a moonlit Japanese garden with a pagoda and falling cherry petals in Yoru mode."></canvas></section>
 
   <section class="np" aria-live="polite">
     <div class="np-head">
@@ -181,7 +181,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v64';
+const BUILD='looplight-v65';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -207,12 +207,12 @@ const MODES={
     plan:['Intro','Morning','Morning 2','Break','Break 2','Return','Variation','Outro'],
     adj:['Sunny','Bright','Breezy','Honey','Easy','Golden','Lemon','Cheerful','Light','Fresh','Little','Merry'],
     noun:['Porch','Cafe','Garden','Bakery','Balcony','Picnic','Meadow','Walk','Windowsill','Breakfast','Orchard','Afternoon']},
-  japan:{title:'Japanese Classical',tagline:'Tsugaru shamisen · taiko · a quiet garden',flipTo:'Flip to Cozy',bpm:[46,58],swing:[0,0],minorP:0,
+  japan:{title:'Yoru',tagline:'Tsugaru shamisen · taiko · a quiet garden',flipTo:'Flip to Cozy',bpm:[46,58],swing:[0,0],minorP:0,
     voices:['koto'],trim:3.6,reverb:0.8,tone:3000,whoosh:false,hatFrom:99,kickFrom:99,hatMul:1,kickV:1,snare:false,ghost:false,bassDur:[2,2],
     plan:['Jo','Ha','Ha 2','Kyu','Kyu 2','Return','Variation','Coda'],
     adj:['Quiet','Autumn','Moonlit','Misty','Silent','Distant','Willow','Winter','Morning','Gentle','Falling','Stone'],
     noun:['Sakura','Temple','Garden','Crane','Lantern','Bamboo','Pond','Mountain','Koto','Teahouse','Moon','River']},
-  china:{title:'Silk & Bamboo',tagline:'Guzheng · bamboo flute · erhu · a misty pavilion',flipTo:'Flip to Cozy',bpm:[70,80],swing:[0,0],minorP:0,
+  china:{title:'Jade Mist',tagline:'Guzheng · bamboo flute · erhu · a misty pavilion',flipTo:'Flip to Cozy',bpm:[70,80],swing:[0,0],minorP:0,
     voices:['koto'],trim:1.5,reverb:0.6,tone:4800,whoosh:false,hatFrom:99,kickFrom:99,hatMul:1,kickV:1,snare:false,ghost:false,bassDur:[2,2],
     plan:['Prelude','Theme','Theme 2','Bridge','Bridge 2','Return','Variation','Coda'],
     adj:['Misty','Jade','Spring','Lotus','Distant','Silken','Morning','Quiet','Golden','Orchid','Winding','Moonlit'],
@@ -224,7 +224,7 @@ const MODES={
     noun:['Lounge','Alley','Corner','Cigar','Window','Boulevard','Platform','Hotel','Streetlight','Stairwell','Taxi','Last Call']}
 };
 let comp_=null,lim_=null,hpNode=null;const sendNodes={};
-/* Japanese Classical is switched off for now (its code is kept below): it is left out of this list, so it can't be flipped to, restored from saved state or opened from a code. Put 'japan' back between 'groove' and 'noir' to bring it back. */
+/* Yoru is switched off for now (its code is kept below): it is left out of this list, so it can't be flipped to, restored from saved state or opened from a code. Put 'japan' back between 'groove' and 'noir' to bring it back. */
 const MODE_ORDER=['cozy','groove','noir','china'];
 /* settings remembered on this phone between visits */
 const STORE_KEY='looplight.settings.v1';
@@ -331,7 +331,7 @@ function composeInner(prevPc,fixed,seed,m){
   return T;
 }
 
-/* ---- Japanese Classical side: koto patterns on a five-note scale, a shakuhachi melody that breathes, and the odd soft taiko ---- */
+/* ---- Yoru side: koto patterns on a five-note scale, a shakuhachi melody that breathes, and the odd soft taiko ---- */
 const JSCALES={yo:[0,2,5,7,9],ryo:[0,2,4,7,9],hirajoshi:[0,2,3,7,8],minyo:[0,3,5,7,10],in:[0,1,5,7,8],iwato:[0,1,5,6,10]};
 const JNAMES={yo:'Yo',ryo:'Ryo',hirajoshi:'Hirajoshi',minyo:'Minyo',in:'In',iwato:'Iwato'};
 const JPROG=[[0,3,2,0],[0,2,4,0],[0,4,3,0],[0,3,4,2],[0,1,3,0],[0,2,1,0]];
@@ -445,7 +445,7 @@ function composeJapan(prevPc,fixed,seed){
   return T;
 }
 
-/* ---- Silk & Bamboo side: a guzheng rolling a steady pentatonic stream, a bamboo flute and an erhu singing over it. Modelled on a long relaxing guzheng, dizi and erhu collection: unhurried eighth notes, a deep note under each bar, and fast sweeps down the strings. ---- */
+/* ---- Jade Mist side: a guzheng rolling a steady pentatonic stream, a bamboo flute and an erhu singing over it. Modelled on a long relaxing guzheng, dizi and erhu collection: unhurried eighth notes, a deep note under each bar, and fast sweeps down the strings. ---- */
 const CSCALES={gong:[0,2,4,7,9],shang:[0,2,5,7,10],jue:[0,3,5,8,10],zhi:[0,2,5,7,9],yu:[0,3,5,7,10]};
 const CNAMES={gong:'Gong',shang:'Shang',jue:'Jue',zhi:'Zhi',yu:'Yu'};
 const CPROG=[[0,2,1,0],[0,3,2,0],[0,1,3,0],[0,2,3,1],[0,4,2,0],[0,3,1,0]];
@@ -1385,7 +1385,7 @@ const SMP_CFG={
 };
 let SMP=null,loadingBand=false,smpLoad={};
 function b64buf(b){const bin=atob(b),n=bin.length,u=new Uint8Array(n);for(let i=0;i<n;i++)u[i]=bin.charCodeAt(i);return u.buffer;}
-/* each side only decodes the recordings it plays: koto, shakuhachi and taiko for Japanese Classical, the saxophone for Jazz Noir */
+/* each side only decodes the recordings it plays: koto, shakuhachi and taiko for Yoru, the saxophone for Jazz Noir */
 const smpWant=()=>(mode==='japan'?['koto','shaku','taiko']:mode==='noir'?(noirRec?[]:['sax','saxp','saxk','saxb','piano','bass']):mode==='china'?(noirRec?[]:['dtr','flute','erhu']):[]);
 const smpHas=i=>!!(SMP&&SMP[i]&&SMP[i].keys.length);
 const smpScript={};
@@ -1909,8 +1909,8 @@ document.addEventListener('visibilitychange',()=>{if(playing&&document.visibilit
 /* ===== Jazz Noir: real recordings =====
    If full recordings are in audio/jazz-noir/ (noir-01.mp3 ... noir-30.mp3), Jazz Noir plays them, shuffled and crossfaded, forever.
    With none there, it falls back to the generated sax band. */
-/* Silk & Bamboo plays recordings the same way (audio/silk-bamboo/s64-01.mp3 ...). The state below is always the current side's; it is parked and restored when the side changes. */
-const REC={noir:{dir:'audio/jazz-noir/noir-',max:40,mb:2.9,title:'Jazz Noir',meta:'Tenor sax, piano, bass & brushes'},china:{dir:'audio/silk-bamboo/s64-',max:4,mb:14,title:'Silk & Bamboo',meta:'Guzheng, flute & erhu'}};
+/* Jade Mist plays recordings the same way (audio/silk-bamboo/s64-01.mp3 ...). The state below is always the current side's; it is parked and restored when the side changes. */
+const REC={noir:{dir:'audio/jazz-noir/noir-',max:40,mb:2.9,title:'Jazz Noir',meta:'Tenor sax, piano, bass & brushes'},china:{dir:'audio/silk-bamboo/s64-',max:4,mb:14,title:'Jade Mist',meta:'Guzheng, flute & erhu'}};
 const recMode=()=>mode==='noir'||mode==='china';
 const NOIR_MAX=40,noirPath=i=>REC[mode].dir+String(i+1).padStart(2,'0')+'.mp3';
 let noirRec=null,noirList=[],noirProbing=null,noirDecks=null,noirAct=0,noirQ=[],noirXf=false,noirNo=0;
@@ -2177,7 +2177,7 @@ function renderAmbVols(){
     row.appendChild(lab);row.appendChild(inp);row.appendChild(out);box.appendChild(row);
   });
 }
-const FLIP_NAME={cozy:'Cozy',groove:'Sunny Side',japan:'Japanese Classical',noir:'Jazz Noir',china:'Silk & Bamboo'};
+const FLIP_NAME={cozy:'Cozy',groove:'Sunny Side',japan:'Yoru',noir:'Jazz Noir',china:'Jade Mist'};
 /* one button for each of the other sides, so you pick where to flip to */
 function renderFlips(){
   const box=$('flips');box.textContent='';
