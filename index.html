@@ -63,7 +63,7 @@ h1{margin:0;font:400 clamp(1.2rem,1.05rem + 1vw,1.6rem)/1.15 var(--f-display);le
 .offbtn.on{display:inline-block}
 .starbtn{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));z-index:20;display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--lamp);cursor:pointer;opacity:.85}
 .starbtn svg,.spaceclose svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
-html:not([data-mode="cozy"]):not([data-mode="groove"]) .starbtn,html:not([data-mode="cozy"]):not([data-mode="groove"]) #spaceView{display:none}
+html:not([data-mode="cozy"]):not([data-mode="groove"]):not([data-mode="drive"]) .starbtn,html:not([data-mode="cozy"]):not([data-mode="groove"]):not([data-mode="drive"]) #spaceView{display:none}
 #spaceView{position:fixed;inset:0;z-index:100;background:#000;opacity:0;visibility:hidden;transition:opacity .6s,visibility 0s .6s}
 #spaceView.open{opacity:1;visibility:visible;transition:opacity .6s}
 .spaceclose.show{opacity:1;pointer-events:auto}
@@ -185,7 +185,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v83';
+const BUILD='looplight-v84';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -2205,7 +2205,7 @@ $('spaceClose').addEventListener('click',e=>{e.stopPropagation();spaceShow(false
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&spaceOpen)spaceShow(false);});
 document.addEventListener('visibilitychange',()=>{if(spaceOpen){if(document.hidden)spaceVid.pause();else{const p=spaceVid.play();if(p&&p.catch)p.catch(()=>{});}}});
 spaceVid.addEventListener('error',()=>{if(spaceOpen)spaceShow(false);});
-function spaceSync(){if(spaceOpen&&mode!=='cozy'&&mode!=='groove')spaceShow(false);}
+function spaceSync(){if(spaceOpen&&mode!=='cozy'&&mode!=='groove'&&mode!=='drive')spaceShow(false);}
 function switchModeCore(m){
   recSwap(mode,m);
   mode=m;nextTune=null;const cfg=MODES[m];
