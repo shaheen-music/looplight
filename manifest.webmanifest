@@ -1,7 +1,7 @@
 {
  "name": "Looplight",
  "short_name": "Looplight",
- "description": "Endless generative music in four moods: Cozy, Sunny Side, Jazz Noir and Jade Mist.",
+ "description": "Endless generative music in four moods: Cozy, Sunny Side, Jazz Noir and Scarlet Mist.",
  "start_url": "/looplight/",
  "scope": "/looplight/",
  "display": "standalone",

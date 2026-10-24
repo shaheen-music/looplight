@@ -181,7 +181,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v68';
+const BUILD='looplight-v69';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -212,7 +212,7 @@ const MODES={
     plan:['Jo','Ha','Ha 2','Kyu','Kyu 2','Return','Variation','Coda'],
     adj:['Quiet','Autumn','Moonlit','Misty','Silent','Distant','Willow','Winter','Morning','Gentle','Falling','Stone'],
     noun:['Sakura','Temple','Garden','Crane','Lantern','Bamboo','Pond','Mountain','Koto','Teahouse','Moon','River']},
-  china:{title:'Jade Mist',tagline:'Guzheng · bamboo flute · erhu · a misty pavilion',flipTo:'Flip to Cozy',bpm:[70,80],swing:[0,0],minorP:0,
+  china:{title:'Scarlet Mist',tagline:'Guzheng · bamboo flute · erhu · a misty pavilion',flipTo:'Flip to Cozy',bpm:[70,80],swing:[0,0],minorP:0,
     voices:['koto'],trim:1.5,reverb:0.6,tone:4800,whoosh:false,hatFrom:99,kickFrom:99,hatMul:1,kickV:1,snare:false,ghost:false,bassDur:[2,2],
     plan:['Prelude','Theme','Theme 2','Bridge','Bridge 2','Return','Variation','Coda'],
     adj:['Misty','Jade','Spring','Lotus','Distant','Silken','Morning','Quiet','Golden','Orchid','Winding','Moonlit'],
@@ -445,7 +445,7 @@ function composeJapan(prevPc,fixed,seed){
   return T;
 }
 
-/* ---- Jade Mist side: a guzheng rolling a steady pentatonic stream, a bamboo flute and an erhu singing over it. Modelled on a long relaxing guzheng, dizi and erhu collection: unhurried eighth notes, a deep note under each bar, and fast sweeps down the strings. ---- */
+/* ---- Scarlet Mist side: a guzheng rolling a steady pentatonic stream, a bamboo flute and an erhu singing over it. Modelled on a long relaxing guzheng, dizi and erhu collection: unhurried eighth notes, a deep note under each bar, and fast sweeps down the strings. ---- */
 const CSCALES={gong:[0,2,4,7,9],shang:[0,2,5,7,10],jue:[0,3,5,8,10],zhi:[0,2,5,7,9],yu:[0,3,5,7,10]};
 const CNAMES={gong:'Gong',shang:'Shang',jue:'Jue',zhi:'Zhi',yu:'Yu'};
 const CPROG=[[0,2,1,0],[0,3,2,0],[0,1,3,0],[0,2,3,1],[0,4,2,0],[0,3,1,0]];
@@ -1909,8 +1909,8 @@ document.addEventListener('visibilitychange',()=>{if(playing&&document.visibilit
 /* ===== Jazz Noir: real recordings =====
    If full recordings are in audio/jazz-noir/ (noir-01.mp3 ... noir-30.mp3), Jazz Noir plays them, shuffled and crossfaded, forever.
    With none there, it falls back to the generated sax band. */
-/* Jade Mist plays recordings the same way (audio/silk-bamboo/s64-01.mp3 ...). The state below is always the current side's; it is parked and restored when the side changes. */
-const REC={noir:{dir:'audio/jazz-noir/noir-',max:66,mb:2.6,title:'Jazz Noir',meta:'Tenor sax, piano, bass & brushes'},china:{dir:'audio/silk-bamboo/s64-',max:42,mb:3.4,title:'Jade Mist',meta:'Guzheng, flute & erhu'}};
+/* Scarlet Mist plays recordings the same way (audio/silk-bamboo/s64-01.mp3 ...). The state below is always the current side's; it is parked and restored when the side changes. */
+const REC={noir:{dir:'audio/jazz-noir/noir-',max:66,mb:2.6,title:'Jazz Noir',meta:'Tenor sax, piano, bass & brushes'},china:{dir:'audio/silk-bamboo/s64-',max:42,mb:3.4,title:'Scarlet Mist',meta:'Guzheng, flute & erhu'}};
 const recMode=()=>mode==='noir'||mode==='china';
 const NOIR_MAX=66,noirPath=i=>REC[mode].dir+String(i+1).padStart(2,'0')+'.mp3';
 let noirRec=null,noirList=[],noirProbing=null,noirDecks=null,noirAct=0,noirQ=[],noirXf=false,noirNo=0;
@@ -2177,7 +2177,7 @@ function renderAmbVols(){
     row.appendChild(lab);row.appendChild(inp);row.appendChild(out);box.appendChild(row);
   });
 }
-const FLIP_NAME={cozy:'Cozy',groove:'Sunny Side',japan:'Yoru',noir:'Jazz Noir',china:'Jade Mist'};
+const FLIP_NAME={cozy:'Cozy',groove:'Sunny Side',japan:'Yoru',noir:'Jazz Noir',china:'Scarlet Mist'};
 /* one button for each of the other sides, so you pick where to flip to */
 function renderFlips(){
   const box=$('flips');box.textContent='';
