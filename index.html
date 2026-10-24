@@ -187,7 +187,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v77';
+const BUILD='looplight-v78';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -251,6 +251,12 @@ const HATV_G=[0.7,0.35,0.55,0.4,0.7,0.35,0.55,0.5];
 const MAJOR=[0,2,4,5,7,9,11],MINOR=[0,2,3,5,7,8,10];
 /* one chord per bar, four bars; degrees stack in thirds so every chord is a proper seventh chord */
 const PROG_MAJOR=[[0,5,1,4],[1,4,0,5],[0,3,2,5],[0,2,3,4],[5,3,0,4],[2,5,1,4],[0,3,1,4],[3,2,1,0],[5,1,4,0],[1,4,2,5],[0,4,5,3],[3,4,2,5],[0,5,3,4],[0,1,3,4]];
+/* Night Drive flavours: the original C-minor sound (m5), a faster D-minor one with a sawtooth arpeggio (m2), and an Andalusian one (Am G F E) with string pad, square lead and a four-on-the-floor kick (m4) */
+const DSTYLE={
+  m5:{sfx:'d',bpm:[86,92],snd:{pad:'dpad',arp:'dcry',bass:'dbas',lead:'dlead'},arp:'bounce',b16:false,kick:[0,4],name:'Synth pad, arpeggio & lead'},
+  m2:{sfx:'e',bpm:[92,98],snd:{pad:'dpad',arp:'dsaw',bass:'dbas',lead:'dl87'},arp:'bounce',b16:false,kick:[0,4],prog:[0,5,2,6],name:'Saw arpeggio & lead'},
+  m4:{sfx:'f',bpm:[96,102],snd:{pad:'dstr',arp:'dsaw',bass:'dsyb',lead:'dsq'},arp:'up',b16:true,kick:[0,2,4,6],name:'Andalusian strings & square lead'}
+};
 const PROG_D=[[0,5,2,6],[0,5,2,6],[0,5,2,6],[0,6,5,6],[0,5,3,6],[0,3,5,6],[0,5,2,4]];
 const PROG_MINOR=[[0,5,2,6],[0,3,6,2],[0,6,5,6],[0,3,0,4],[0,6,3,5],[0,5,3,4],[1,4,0,0],[3,6,2,5],[0,2,5,6],[0,3,4,0],[5,6,0,0]];
 /* melody rhythms on an eighth-note grid (8 steps a bar); odd steps get the swing */
@@ -310,18 +316,18 @@ function varyPhrase(T,P){
 }
 const KEYS=[0,2,3,5,7,9,10];
 function parseCode(str){
-  const m=/^\s*([0-9a-z]{1,8})\s*[-\s]\s*([0-6])\s*([gjnscd]?)\s*$/i.exec(str||'');
+  const m=/^\s*([0-9a-z]{1,8})\s*[-\s]\s*([0-6])\s*([gjnscdef]?)\s*$/i.exec(str||'');
   const sf=m&&m[3]?m[3].toLowerCase():'';
   if(m&&/^[jst]$/i.test(m[3]||''))return null;
-  return m?{seed:parseInt(m[1],36),ki:+m[2],mode:sf==='g'?'groove':sf==='d'?'drive':(sf==='j'||sf==='s'||sf==='t')?'japan':sf==='n'?'noir':sf==='c'?'china':'cozy',style:sf==='s'?'sham':sf==='t'?'tsu':'koto',text:m[1].toLowerCase()+'-'+m[2]+sf}:null;
+  return m?{seed:parseInt(m[1],36),ki:+m[2],mode:sf==='g'?'groove':(sf==='d'||sf==='e'||sf==='f')?'drive':(sf==='j'||sf==='s'||sf==='t')?'japan':sf==='n'?'noir':sf==='c'?'china':'cozy',style:sf==='s'?'sham':sf==='t'?'tsu':'koto',dstyle:sf==='e'?'m2':sf==='f'?'m4':'m5',text:m[1].toLowerCase()+'-'+m[2]+sf}:null;
 }
 /* each new Cozy or Sunny Side tune is picked to differ from the one before it in at least three ways (chords, drums, bass, accompaniment, chord colour, lead sound, major/minor) while keeping the tempo within 3 BPM of it, so the pace stays steady; a saved tune code still replays exactly */
 const lastSig={};
-function tuneSig(T){return {p:T.prog.join(''),d:JSON.stringify(T.drum),c:JSON.stringify(T.comp),b:JSON.stringify(T.bassPat),o:T.co.join(''),v:T.melVoice,m:T.minor,bpm:T.bpm};}
+function tuneSig(T){return {p:T.prog.join(''),d:JSON.stringify(T.drum),c:JSON.stringify(T.comp),b:JSON.stringify(T.bassPat),o:T.co.join(''),v:T.melVoice,m:T.minor,bpm:T.bpm,s:T.ds};}
 function compose(prevPc,fixed,m){
   m=fixed?fixed.mode:(m||mode);
   const mk=()=>{const seed=fixed?fixed.seed:Math.floor(Math.random()*0x7fffffff);R=mulberry(seed);try{return m==='japan'?composeJapan(prevPc,fixed,seed):m==='noir'?composeNoir(prevPc,fixed,seed):m==='china'?composeChina(prevPc,fixed,seed):composeInner(prevPc,fixed,seed,m);}finally{R=Math.random;}};
-  if(fixed||(m!=='cozy'&&m!=='groove'))return mk();
+  if(fixed||(m!=='cozy'&&m!=='groove'&&m!=='drive'))return mk();
   const lp=lastSig[m];let best=null,bs=-1e9;
   for(let tries=0;tries<80;tries++){
     const T=mk(),sg=tuneSig(T);
@@ -341,20 +347,22 @@ function composeInner(prevPc,fixed,seed,m){
   if(fixed)ki=fixed.ki;else if(KEYS[ki]===prevPc)ki=(ki+1)%7;
   const keyPc=KEYS[ki];
   const iv=minor?MINOR:MAJOR,root=48+keyPc;
-  const prog=window.__PROG||(m==='drive'?pick(PROG_D):pick(G?(minor?PROG_G_MINOR:PROG_G_MAJOR):(minor?PROG_MINOR:PROG_MAJOR)));
+  const DS=m==='drive'?(fixed?(fixed.dstyle||'m5'):(window.__DSTYLE||(()=>{const r=Math.random();return r<0.4?'m5':r<0.7?'m2':'m4';})())):null,DC=DS?DSTYLE[DS]:null;
+  let prog=window.__PROG||(m==='drive'?pick(PROG_D):pick(G?(minor?PROG_G_MINOR:PROG_G_MAJOR):(minor?PROG_MINOR:PROG_MAJOR)));
   /* chord colour: mostly seventh chords, sometimes added-ninth, sixth or plain triads */
   const CO=window.__CO||pick([[0,2,4,6],[0,2,4,6],[0,2,4,6],[0,2,4,8],[0,2,4,8],[0,2,4,5],[0,2,4,7]]);
   const T={
-    mode:m,code:seed.toString(36)+'-'+ki+(m==='drive'?'d':G?'g':''),name:pick(cfg.adj)+' '+pick(cfg.noun),minor:minor,keyPc:keyPc,iv:iv,root:root,prog:prog,
-    bpm:cfg.bpm[0]+rnd(cfg.bpm[1]-cfg.bpm[0]+1),swing:rr(cfg.swing[0],cfg.swing[1]),
+    mode:m,code:seed.toString(36)+'-'+ki+(m==='drive'?DC.sfx:G?'g':''),name:pick(cfg.adj)+' '+pick(cfg.noun),minor:minor,keyPc:keyPc,iv:iv,root:root,prog:prog,
+    bpm:DC?DC.bpm[0]+Math.round(rnd(cfg.bpm[1]-cfg.bpm[0]+1)/(cfg.bpm[1]-cfg.bpm[0])*(DC.bpm[1]-DC.bpm[0])):cfg.bpm[0]+rnd(cfg.bpm[1]-cfg.bpm[0]+1),swing:rr(cfg.swing[0],cfg.swing[1]),
     melVoice:pick(cfg.voices),
     drum:(G?DRUMS_G:DRUMS)[pick(['A','B','C','D','E','F'])],comp:pick(G?COMP_G:COMP),bassPat:pick(G?BASSPAT_G:BASSPAT),
     bus:null,dbus:null
   };
-  if(m==='drive')T.drum={k:[0,4],r:[2,6]};
+  if(m==='drive'){T.drum={k:DC.kick,r:[2,6]};T.ds=DS;T.dc=DC;if(DC.prog)T.prog=prog=DC.prog;}
   T.chords=prog.map(d=>CO.map(o=>{let m=idxMidi(root,iv,d+o);while(m<50)m+=12;while(m>=70)m-=12;return m;}).sort((a,b)=>a-b));
   T.bass=prog.map(d=>{let m=idxMidi(root,iv,d);while(m>=55)m-=12;while(m<43)m+=12;return m;});
   T.chordPcs=prog.map(d=>new Set(CO.map(o=>pcOf(idxMidi(root,iv,d+o),keyPc))));
+  if(DS==='m4'){const AN=[[0,[0,3,7]],[-2,[0,4,7]],[-4,[0,4,7]],[-5,[0,4,7]]];T.dch=AN.map(c=>c[1].map(x=>root+c[0]+x));T.dbass=AN.map(c=>root+c[0]);T.prog=[0,6,5,4];T.chordPcs=T.dch.map(ch=>new Set(ch.map(x=>pcOf(x,keyPc))));T.chords=T.dch.map(ch=>ch.map(x=>{while(x<50)x+=12;while(x>=70)x-=12;return x;}).sort((a,b)=>a-b));T.bass=T.dbass.map(x=>{while(x>=55)x-=12;while(x<43)x+=12;return x;});}
   T.pent=minor?[0,3,5,7,10]:[0,2,4,7,9];
   T.co=CO;
   /* now and then one more note joins the scale for colour (a major seventh, or a flat sixth in minor) */
@@ -1485,6 +1493,11 @@ const SMP_CFG={
   dtr:{sus:false,a:0.008,rel:0.4,lp:2400,norm:'peak',target:0.35},
   piano:{sus:false,a:0.004,rel:0.5,norm:'peak',target:0.3},
   bass:{sus:false,a:0.006,rel:0.25,norm:'peak',target:0.4},
+  dstr:{sus:true,a:0.3,rel:0.7,norm:'rms',target:0.05},
+  dsaw:{sus:false,a:0.004,rel:0.25,norm:'peak',target:0.14},
+  dsyb:{sus:true,a:0.006,rel:0.16,norm:'rms',target:0.1},
+  dsq:{sus:true,a:0.012,rel:0.25,vib:5,norm:'rms',target:0.045},
+  dl87:{sus:true,a:0.01,rel:0.3,vib:5,norm:'rms',target:0.055},
   dpad:{sus:true,a:0.35,rel:0.7,norm:'rms',target:0.05},
   dcry:{sus:false,a:0.004,rel:0.25,norm:'peak',target:0.2},
   dbas:{sus:true,a:0.006,rel:0.16,norm:'rms',target:0.1},
@@ -1495,7 +1508,7 @@ const SMP_CFG={
 let SMP=null,loadingBand=false,smpLoad={};
 function b64buf(b){const bin=atob(b),n=bin.length,u=new Uint8Array(n);for(let i=0;i<n;i++)u[i]=bin.charCodeAt(i);return u.buffer;}
 /* each side only decodes the recordings it plays: koto, shakuhachi and taiko for Yoru, the saxophone for Jazz Noir */
-const smpWant=()=>(mode==='japan'?['koto','shaku','taiko']:mode==='noir'?(noirRec?[]:['sax','saxp','saxk','saxb','piano','bass']):mode==='china'?(noirRec?[]:['dtr','flute','erhu']):mode==='drive'?['dpad','dcry','dbas','dlead']:[]);
+const smpWant=()=>(mode==='japan'?['koto','shaku','taiko']:mode==='noir'?(noirRec?[]:['sax','saxp','saxk','saxb','piano','bass']):mode==='china'?(noirRec?[]:['dtr','flute','erhu']):mode==='drive'?['dpad','dcry','dbas','dlead','dstr','dsaw','dsyb','dsq','dl87']:[]);
 const smpHas=i=>!!(SMP&&SMP[i]&&SMP[i].keys.length);
 const smpScript={};
 /* each instrument's recordings are their own small file, fetched the first time a side needs them (and kept for offline use) */
@@ -1981,20 +1994,29 @@ function scheduleBar(t0){
 }
 /* Night Drive: a warm synth pad holds each chord, a crystal arpeggio runs in sixteenths over it, a synth bass pulses in eighths and a lead sings the tune over a steady kick, snare and hats; every tune picks its own key, chords and melody */
 function scheduleDriveBar(T,t0,bar,sec,bi,e,st,ending,dropOut){
-  const cfg=MODES.drive,hum=()=>(Math.random()-0.5)*0.012;
-  const tri=[0,2,4].map(o=>{let m=idxMidi(T.root,T.iv,T.prog[bi]+o);while(m<50)m+=12;while(m>=66)m-=12;return m;}).sort((a,b)=>a-b);
-  let rb=idxMidi(T.root,T.iv,T.prog[bi]);while(rb>=40)rb-=12;while(rb<28)rb+=12;
-  tri.forEach(m=>playSample('dpad',t0+hum(),m,0.5,e*8,bus));
-  playSample('dpad',t0,tri[0]-12,0.4,e*8,bus);
-  if(!S.lite&&(sec>0||bi>=2)){
-    const seq=[tri[0],tri[2],tri[1],tri[2]+12,tri[0]+12,tri[2],tri[1],tri[0]];
-    for(let k=0;k<16;k++)playSample('dcry',st(k*0.5)+hum(),seq[k%8]+(((k>>3)&1)?12:0),k%4===0?0.62:0.42,0.2,bus);
+  const cfg=MODES.drive,hum=()=>(Math.random()-0.5)*0.012,D=T.dc,sn=D.snd;
+  let tri,rb;
+  if(T.dch){
+    tri=T.dch[bi].map(m=>{while(m<50)m+=12;while(m>=66)m-=12;return m;}).sort((a,b)=>a-b);
+    rb=T.dbass[bi];while(rb>=40)rb-=12;while(rb<28)rb+=12;
+  }else{
+    tri=[0,2,4].map(o=>{let m=idxMidi(T.root,T.iv,T.prog[bi]+o);while(m<50)m+=12;while(m>=66)m-=12;return m;}).sort((a,b)=>a-b);
+    rb=idxMidi(T.root,T.iv,T.prog[bi]);while(rb>=40)rb-=12;while(rb<28)rb+=12;
   }
-  if(bar>=1&&!dropOut)for(let k=0;k<8;k++)playSample('dbas',st(k)+hum()*0.5,rb+((k===3||k===6)?12:0),k%2===0?0.95:0.72,e*0.9,bus);
+  tri.forEach(m=>playSample(sn.pad,t0+hum(),m,0.5,e*8,bus));
+  playSample(sn.pad,t0,tri[0]-12,0.4,e*8,bus);
+  if(!S.lite&&(sec>0||bi>=2)){
+    const seq=D.arp==='up'?[tri[0],tri[1],tri[2],tri[1]+12,tri[2],tri[1],tri[0]+12,tri[1]]:[tri[0],tri[2],tri[1],tri[2]+12,tri[0]+12,tri[2],tri[1],tri[0]];
+    for(let k=0;k<16;k++)playSample(sn.arp,st(k*0.5)+hum(),seq[k%8]+(((k>>3)&1)?12:0),k%4===0?0.62:0.42,0.2,bus);
+  }
+  if(bar>=1&&!dropOut){
+    if(D.b16)for(let k=0;k<16;k++)playSample(sn.bass,st(k*0.5)+hum()*0.5,rb+(((k%8)===3||(k%8)===6)?12:0),k%4===0?0.95:0.7,e*0.45,bus);
+    else for(let k=0;k<8;k++)playSample(sn.bass,st(k)+hum()*0.5,rb+((k===3||k===6)?12:0),k%2===0?0.95:0.72,e*0.9,bus);
+  }
   const pk=PLAN[sec].ph,ph=pk?T[pk]:(sec===0&&bi>=2?T.A:null);
   if(ph)ph[bi].forEach((n,i,arr)=>{
     const nx=arr[i+1]?arr[i+1].step:8,d=Math.max(0.2,(nx-n.step)*e*0.92),t=st(n.step)+hum();
-    playSample('dlead',t,n.midi,pk?(n.step===0?0.8:0.68):0.45,d,bus);uiQ.push({t:t,k:'note',m:n.midi});
+    playSample(sn.lead,t,n.midi,pk?(n.step===0?0.8:0.68):0.45,d,bus);uiQ.push({t:t,k:'note',m:n.midi});
   });
   if(bar>=4&&!dropOut){
     if(!S.lite)for(let k=0;k<8;k++)hat(st(k),HATV_G[k]*cfg.hatMul);
@@ -2440,7 +2462,7 @@ function renderTune(T,bar){
     updateMediaSession();
     $('title').textContent=T.name;
     $('codeTxt').textContent=T.code;
-    $('meta').textContent=NOTE[T.keyPc]+' '+(T.mode==='china'?(CNAMES[T.scaleName]+' · '+T.bpm+' BPM · Guzheng, bamboo flute & erhu'):T.mode==='drive'?((T.minor?'minor':'major')+' · '+T.bpm+' BPM · Synth pad, arpeggio & lead'):T.mode==='japan'?(JNAMES[T.scaleName]+' · '+T.bpm+' BPM · '+(T.style==='tsu'?'Tsugaru shamisen & taiko':T.style==='sham'?'Shamisen, koto & shakuhachi':'Koto & shakuhachi')):T.mode==='noir'?(T.minor?'minor':'major')+' · '+T.bpm+' BPM · Tenor sax & piano · '+(smpHas('sax')?'recorded sax ':'SYNTH FALLBACK ')+BUILD.replace('looplight-',''):(T.minor?'minor':'major')+' · '+T.bpm+' BPM · '+Math.round(T.swing*100)+'% swing');
+    $('meta').textContent=NOTE[T.keyPc]+' '+(T.mode==='china'?(CNAMES[T.scaleName]+' · '+T.bpm+' BPM · Guzheng, bamboo flute & erhu'):T.mode==='drive'?((T.minor?'minor':'major')+' · '+T.bpm+' BPM · '+T.dc.name):T.mode==='japan'?(JNAMES[T.scaleName]+' · '+T.bpm+' BPM · '+(T.style==='tsu'?'Tsugaru shamisen & taiko':T.style==='sham'?'Shamisen, koto & shakuhachi':'Koto & shakuhachi')):T.mode==='noir'?(T.minor?'minor':'major')+' · '+T.bpm+' BPM · Tenor sax & piano · '+(smpHas('sax')?'recorded sax ':'SYNTH FALLBACK ')+BUILD.replace('looplight-',''):(T.minor?'minor':'major')+' · '+T.bpm+' BPM · '+Math.round(T.swing*100)+'% swing');
   }
   noirUi();
   $('eyebrow').textContent=started?'Now playing':'Up first';
