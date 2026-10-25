@@ -185,7 +185,7 @@ kbd{font:500 .62rem var(--f-mono);padding:.06rem .3rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v91';
+const BUILD='looplight-v92';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -1636,10 +1636,10 @@ function scheduleBar(t0){
   const dropOut=ending||(sec===3&&bi<2);
 
   if(bar===0)delayNode.delayTime.setTargetAtTime(60/T.bpm,t0,0.08);
-  /* transitions: the new tune swells in over its first bar; the old one thins out over its last two, then its reverb and delay tails ring away */
+  /* transitions: the new tune swells in quickly (about a second); the old one thins out over its last two, then its reverb and delay tails ring away */
   const barLen=e*8;
   if(bar===0){
-    [T.bus,T.dbus].forEach(b=>{b.gain.cancelScheduledValues(t0);b.gain.setValueAtTime(0.12,t0);b.gain.linearRampToValueAtTime(1,t0+barLen*0.9);});
+    [T.bus,T.dbus].forEach(b=>{b.gain.cancelScheduledValues(t0);b.gain.setValueAtTime(0.22,t0);b.gain.setTargetAtTime(1,t0,0.22);});
   }
   if(S.auto&&bar===30){
     [T.bus,T.dbus].forEach(b=>{b.gain.cancelScheduledValues(t0);b.gain.setValueAtTime(1,t0);b.gain.linearRampToValueAtTime(0.7,t0+barLen);});
