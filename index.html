@@ -185,7 +185,7 @@ kbd{font:500 .62rem var(--f-mono);padding:.06rem .3rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v92';
+const BUILD='looplight-v93';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -791,7 +791,7 @@ function initAudio(){
     const dlp=ac.createBiquadFilter();dlp.type='lowpass';dlp.frequency.value=2400;
     const dsend=ac.createGain();dsend.gain.value=0.12;sendNodes.d=dsend;
     mainBus.connect(dsend);dsend.connect(delayNode);delayNode.connect(dlp);dlp.connect(fb);fb.connect(delayNode);dlp.connect(master);
-    const conv=ac.createConvolver();conv.buffer=makeImpulse(1.7,3.2);
+    const conv=ac.createConvolver();conv.buffer=makeImpulse(COARSE?1.2:1.7,3.2);
     const rlp=ac.createBiquadFilter();rlp.type='lowpass';rlp.frequency.value=2600;
     const rsend=ac.createGain();rsend.gain.value=MODES[mode].reverb;sendNodes.r=rsend;
     mainBus.connect(rsend);rsend.connect(conv);conv.connect(rlp);rlp.connect(master);
@@ -1636,10 +1636,10 @@ function scheduleBar(t0){
   const dropOut=ending||(sec===3&&bi<2);
 
   if(bar===0)delayNode.delayTime.setTargetAtTime(60/T.bpm,t0,0.08);
-  /* transitions: the new tune swells in quickly (about a second); the old one thins out over its last two, then its reverb and delay tails ring away */
+  /* transitions: the new tune swells in from a hush over about a second and a half; the old one thins out over its last two, then its reverb and delay tails ring away */
   const barLen=e*8;
   if(bar===0){
-    [T.bus,T.dbus].forEach(b=>{b.gain.cancelScheduledValues(t0);b.gain.setValueAtTime(0.22,t0);b.gain.setTargetAtTime(1,t0,0.22);});
+    [T.bus,T.dbus].forEach(b=>{b.gain.cancelScheduledValues(t0);b.gain.setValueAtTime(0.1,t0);b.gain.setTargetAtTime(1,t0,0.4);});
   }
   if(S.auto&&bar===30){
     [T.bus,T.dbus].forEach(b=>{b.gain.cancelScheduledValues(t0);b.gain.setValueAtTime(1,t0);b.gain.linearRampToValueAtTime(0.7,t0+barLen);});
@@ -1673,7 +1673,7 @@ function scheduleBar(t0){
       const t=st(n.step);
       playMelody(T,t,n.midi,n.step===0?0.95:0.78);
       /* in the second half of each section a softer voice sings a third below */
-      if((sec===2||sec===4||sec===6)&&!S.lite&&!eco&&(n.step===0||n.dur>=2)){const hi=T.scaleNotes.indexOf(n.midi);if(hi>=2)playMelody(T,t+0.012,T.scaleNotes[hi-2],0.42,HARM_VOICE[T.melVoice]||'kalimba');}
+      if((sec===2||sec===4||sec===6)&&!S.lite&&!eco&&!COARSE&&(n.step===0||n.dur>=2)){const hi=T.scaleNotes.indexOf(n.midi);if(hi>=2)playMelody(T,t+0.012,T.scaleNotes[hi-2],0.42,HARM_VOICE[T.melVoice]||'kalimba');}
       uiQ.push({t:t,k:'note',m:n.midi});
     });
   }else if(sec===0&&bi>=2&&T.A){
@@ -1735,8 +1735,14 @@ function advance(){
   }else if(!S.auto&&barNum===27)barNum=4;
   else barNum++;
 }
+let pumpLast=0,lagHits=[];
 function pump(){
-  if(!playing||!ac)return;
+  if(!playing||!ac){pumpLast=0;return;}
+  /* if the page itself keeps stalling (a busy phone), go to the lighter sound as well */
+  const pn=performance.now();
+  if(document.visibilityState!=='visible')pumpLast=0;
+  if(pumpLast&&pn-pumpLast>300){lagHits.push(pn);lagHits=lagHits.filter(x=>pn-x<20000);if(lagHits.length>=3)eco=true;}
+  pumpLast=pn;
   const LA=window.__COZY_LOOKAHEAD||1.4;
   while(nextBarTime<ac.currentTime+LA){
     if(window.__COZY_BARS&&barCount>=window.__COZY_BARS)break;
@@ -2230,7 +2236,7 @@ function initScene(){
   drops=[];for(let i=0;i<n;i++)drops.push({x:Math.random()*W,y:Math.random()*H,l:10+Math.random()*18,v:260+Math.random()*220});
 }
 function layout(){
-  dpr=Math.min(window.devicePixelRatio||1,2);
+  dpr=Math.min(window.devicePixelRatio||1,COARSE?1.5:2);
   W=cv.clientWidth;H=cv.clientHeight;if(!W||!H)return;
   cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);initScene();initCity();
 }
@@ -2425,7 +2431,7 @@ function draw(dt,time){
 let lastT=performance.now();
 function frame(now){
   processQueue();
-  if(now-lastT>=30){const dt=Math.min(0.08,(now-lastT)/1000);lastT=now;draw(dt,now/1000);}
+  if(now-lastT>=(COARSE&&playing?42:30)){const dt=Math.min(0.08,(now-lastT)/1000);lastT=now;draw(dt,now/1000);}
   requestAnimationFrame(frame);
 }
 
