@@ -132,7 +132,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
     <div class="topright"><p class="status" id="status">Ready</p><span class="flips" id="flips"></span></div>
   </header>
 
-  <section class="scene"><canvas id="scene" role="img" aria-label="An animated scene that moves with the music: a rainy night window in Cozy mode, a sunny golden-hour hillside in Sunny Side mode, a moonlit Japanese garden with a pagoda and falling cherry petals in Yoru mode."></canvas></section>
+  <section class="scene"><canvas id="scene" role="img" aria-label="An animated scene that moves with the music: a rainy night window in Cozy mode, a sunny golden-hour hillside in Sunroom mode, a moonlit Japanese garden with a pagoda and falling cherry petals in Yoru mode."></canvas></section>
 
   <section class="np" aria-live="polite">
     <div class="np-head">
@@ -185,7 +185,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v86';
+const BUILD='looplight-v87';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -201,12 +201,12 @@ const reduceMotion=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-mot
 /* Two sides of the card. Cozy: slow, warm, soft; made for winding down and sleep. Groove On: steady, brighter, with a real backbeat; made for working and gaming. */
 const RHY_G=[[0,2,3,5,6],[0,1,3,4,6],[0,3,4,6,7],[1,2,4,6,7],[0,2,4,5,7],[0,2,3,6],[1,3,5,7],[0,3,5,6]];
 const MODES={
-  cozy:{title:'Cozy Loops',tagline:'Wind down · relax · sleep',flipTo:'Flip to Sunny Side',bpm:[64,78],swing:[0.10,0.16],minorP:0.4,
+  cozy:{title:'Cozy Loops',tagline:'Wind down · relax · sleep',flipTo:'Flip to Sunroom',bpm:[64,78],swing:[0.10,0.16],minorP:0.4,
     voices:['kalimba','kalimba','pluck','marimba','epiano'],trim:1,reverb:0.45,tone:3600,hatFrom:1,kickFrom:2,hatMul:1,kickV:1,snare:false,ghost:true,bassDur:[4,2.5],
     plan:['Intro','Theme','Theme 2','Bridge','Bridge 2','Return','Variation','Outro'],
     adj:['Slow','Quiet','Warm','Rainy','Sleepy','Golden','Late','Soft','Hazy','Gentle','Lazy','Misty'],
     noun:['Sunday','Window','Tea','Blanket','Porch','Kettle','Candle','Library','Morning','Sweater','Window Seat','Evening','Staircase','Bookshop']},
-  groove:{title:'Sunny Side',tagline:'Bright · easy · good company',flipTo:'Flip to Cozy',bpm:[94,112],swing:[0.03,0.08],minorP:0.5,
+  groove:{title:'Sunroom',tagline:'Bright · easy · good company',flipTo:'Flip to Cozy',bpm:[94,112],swing:[0.03,0.08],minorP:0.5,
     voices:['synth','synth','pluck','epiano','marimba'],trim:1.15,reverb:0.45,tone:7000,hatFrom:0,kickFrom:0,hatMul:1.35,kickV:1.15,snare:true,ghost:false,bassDur:[2.2,1.5],
     plan:['Intro','Morning','Morning 2','Break','Break 2','Return','Variation','Outro'],
     adj:['Sunny','Bright','Breezy','Honey','Easy','Golden','Lemon','Cheerful','Light','Fresh','Little','Merry'],
@@ -310,7 +310,7 @@ function parseCode(str){
   const sf=m&&m[3]?m[3].toLowerCase():'';
   return m?{seed:parseInt(m[1],36),ki:+m[2],mode:sf==='g'?'groove':(sf==='d'||sf==='e'||sf==='h'||sf==='i')?'drive':sf==='n'?'noir':sf==='c'?'china':'cozy',dstyle:(sf==='e'||sf==='i')?'m2':'m5',v2:sf==='h'||sf==='i',text:m[1].toLowerCase()+'-'+m[2]+sf}:null;
 }
-/* each new Cozy or Sunny Side tune is picked to differ from the one before it in at least three ways (chords, drums, bass, accompaniment, chord colour, lead sound, major/minor) while keeping the tempo within 3 BPM of it, so the pace stays steady; a saved tune code still replays exactly */
+/* each new Cozy or Sunroom tune is picked to differ from the one before it in at least three ways (chords, drums, bass, accompaniment, chord colour, lead sound, major/minor) while keeping the tempo within 3 BPM of it, so the pace stays steady; a saved tune code still replays exactly */
 const lastSig={};
 function tuneSig(T){if(T.dv)return {p:T.prog.join(''),a:T.dv.arp+T.dv.den,b:T.dv.bass,d:JSON.stringify(T.drum),x:T.dv.arps+T.dv.lead+T.dv.p7,s:T.ds,bpm:T.bpm};return {p:T.prog.join(''),d:JSON.stringify(T.drum),c:JSON.stringify(T.comp),b:JSON.stringify(T.bassPat),o:T.co.join(''),v:T.melVoice,m:T.minor,bpm:T.bpm,s:T.ds};}
 function compose(prevPc,fixed,m){
@@ -750,11 +750,25 @@ function makeImpulse(sec,decay){
   for(let ch=0;ch<2;ch++){const d=buf.getChannelData(ch);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,decay);}
   return buf;
 }
+/* busy tunes can overload a phone: if the browser reports that the audio thread is struggling, switch to a lighter version of the sound (shorter piano tails, fewer chord notes, no doubled pad) until the app is reopened */
+let eco=false;
+function ecoWatch(){
+  try{
+    const rc=ac.renderCapacity;if(!rc||!rc.addEventListener)return;
+    let bad=0;
+    rc.addEventListener('update',e=>{
+      if(e.underrunRatio>0.005||e.peakLoad>0.9)bad++;else bad=Math.max(0,bad-1);
+      if(bad>=3)eco=true;
+    });
+    rc.start({updateInterval:1});
+  }catch(e){}
+}
 function initAudio(){
   if(!ac){
     const AC=window.AudioContext||window.webkitAudioContext;
     if(!AC)return false;
     ac=new AC({latencyHint:"playback"});
+    ecoWatch();
     master=ac.createGain();master.gain.value=musicGain();
     toneLP=ac.createBiquadFilter();toneLP.type='lowpass';toneLP.frequency.value=MODES[mode].tone;toneLP.Q.value=0.5;
     const comp=ac.createDynamicsCompressor();
@@ -1193,10 +1207,11 @@ function voiceEPiano(t,f,v){
   const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2200;lp.Q.value=0.3;
   const g=ac.createGain();g.gain.setValueAtTime(0.0001,t);
   g.gain.exponentialRampToValueAtTime(0.2*v,t+0.012);
+  const tail=eco?1.0:COARSE?1.4:1.7;
   g.gain.exponentialRampToValueAtTime(0.1*v,t+0.45);
-  g.gain.exponentialRampToValueAtTime(0.0001,t+1.7);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+tail);
   c.connect(lp);lp.connect(g);g.connect(bus);
-  c.start(t);m.start(t);c.stop(t+1.8);m.stop(t+1.8);
+  c.start(t);m.start(t);c.stop(t+tail+0.1);m.stop(t+tail+0.1);
 }
 function voicePad(t,midis,dur,v){
   const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1000;
@@ -1204,7 +1219,7 @@ function voicePad(t,midis,dur,v){
   g.gain.linearRampToValueAtTime(0.05*v,t+0.6);
   g.gain.setValueAtTime(0.05*v,t+dur*0.75);
   g.gain.linearRampToValueAtTime(0.0001,t+dur+0.9);
-  midis.forEach((m,mi)=>{(mi===0&&!S.lite?[-5,5]:[0]).forEach(d=>{
+  midis.forEach((m,mi)=>{(mi===0&&!S.lite&&!eco?[-5,5]:[0]).forEach(d=>{
     const o=ac.createOscillator();o.type='triangle';o.frequency.setValueAtTime(mtof(m),t);o.detune.value=d;
     o.connect(lp);o.start(t);o.stop(t+dur+1);
   });});
@@ -1643,7 +1658,7 @@ function scheduleBar(t0){
   if(T.mode==='drive'){scheduleDriveBar(T,t0,bar,sec,bi,e,st,ending,dropOut);uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
   T.comp.forEach((s,i)=>{
     const t=st(s),v=i===0?0.7:0.4;
-    const ch=T.chords[bi],cn=(i===0&&!S.lite)?ch.length:3;
+    const ch=T.chords[bi],cn=(i===0&&!S.lite&&!eco)?ch.length:3;
     for(let k=0;k<cn;k++)voiceEPiano(t+k*0.022,mtof(ch[ch.length-cn+k]),Math.max(0.2,v-k*0.04));
   });
   voicePad(t0,T.chords[bi].slice(0,3),e*8,1);
@@ -1656,7 +1671,7 @@ function scheduleBar(t0){
       const t=st(n.step);
       playMelody(T,t,n.midi,n.step===0?0.95:0.78);
       /* in the second half of each section a softer voice sings a third below */
-      if((sec===2||sec===4||sec===6)&&!S.lite){const hi=T.scaleNotes.indexOf(n.midi);if(hi>=2)playMelody(T,t+0.012,T.scaleNotes[hi-2],0.42,HARM_VOICE[T.melVoice]||'kalimba');}
+      if((sec===2||sec===4||sec===6)&&!S.lite&&!eco){const hi=T.scaleNotes.indexOf(n.midi);if(hi>=2)playMelody(T,t+0.012,T.scaleNotes[hi-2],0.42,HARM_VOICE[T.melVoice]||'kalimba');}
       uiQ.push({t:t,k:'note',m:n.midi});
     });
   }else if(sec===0&&bi>=2&&T.A){
@@ -2018,7 +2033,7 @@ function renderAmbVols(){
     row.appendChild(lab);row.appendChild(inp);row.appendChild(out);box.appendChild(row);
   });
 }
-const FLIP_NAME={cozy:'Cozy',groove:'Sunny Side',noir:'Jazz Noir',china:'Scarlet Mist',drive:'Night Drive'};
+const FLIP_NAME={cozy:'Cozy',groove:'Sunroom',noir:'Jazz Noir',china:'Scarlet Mist',drive:'Night Drive'};
 /* one button for each of the other sides, so you pick where to flip to */
 function renderFlips(){
   const box=$('flips');box.textContent='';
@@ -2036,7 +2051,7 @@ function fadeLive(){
   live.forEach(T=>{try{holdGain(T.bus.gain,now);T.bus.gain.setTargetAtTime(0,now,0.25);holdGain(T.dbus.gain,now);T.dbus.gain.setTargetAtTime(0,now,0.25);}catch(e){}});
   live.length=0;uiQ.length=0;mediaGen++;
 }
-/* space view: a star button (Cozy and Sunny Side only) opens a full-screen looping star-field video over everything; the close button (or Escape) returns to the app. Random start point and random mirror each time it opens. Music keeps playing. */
+/* space view: a star button (Cozy and Sunroom only) opens a full-screen looping star-field video over everything; the close button (or Escape) returns to the app. Random start point and random mirror each time it opens. Music keeps playing. */
 const spaceView=$('spaceView'),spaceVid=$('spaceVid'),starBtn=$('starBtn');let spaceOpen=false;
 function spaceShow(on){
   spaceOpen=on;closeBtn(false);spaceView.classList.toggle('open',on);spaceView.setAttribute('aria-hidden',on?'false':'true');

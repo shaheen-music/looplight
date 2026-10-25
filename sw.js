@@ -1,5 +1,5 @@
 /* Looplight service worker: opens the newest page whenever you are online (falling back to the saved copy if the network is slow or away), so it also works offline */
-const CACHE='looplight-v86';
+const CACHE='looplight-v87';
 const FILES=['./','index.html','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','samples/flute.js','samples/erhu.js','samples/dtr.js','samples/dpad.js','samples/dcry.js','samples/dbas.js','samples/dlead.js','samples/dsaw.js','samples/dl87.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>Promise.all(FILES.map(f=>fetch(new Request(f,{cache:'reload'})).then(r=>{if(!r.ok)throw new Error(f);return c.put(f,r);})))).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE&&k!=='looplight-audio').map(k=>caches.delete(k)))).then(()=>caches.open('looplight-audio').then(c=>c.keys().then(rs=>Promise.all(rs.filter(r=>(r.url.indexOf('/audio/silk-bamboo/silk-')>=0||r.url.indexOf('/audio/night-drive/')>=0)).map(r=>c.delete(r)))))).catch(()=>{}).then(()=>self.clients.claim()));});
