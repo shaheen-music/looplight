@@ -43,13 +43,13 @@ html:not([data-mode="japan"]):not([data-mode="china"]) .jc{display:none}
 .tagline{margin:0;font:400 .78rem/1.3 var(--f-mono);letter-spacing:.06em;color:var(--muted)}
 .flipbtn{display:inline-flex;align-items:center;gap:.35rem;min-height:32px;padding:.3rem .7rem;border-radius:999px;border:1px solid var(--lamp);background:var(--lamp-soft);color:var(--lamp);font:600 .74rem/1 var(--f-body);cursor:pointer}
 .flipbtn:hover{filter:brightness(1.12)}
-.flipbtn{min-height:28px;padding:.22rem .6rem;font-size:.7rem}
+.flipbtn{min-height:24px;padding:.15rem .5rem;font-size:.62rem}
 .flipbtn[data-to="groove"]{--lamp:#b9e38c;--lamp-soft:rgba(185,227,140,.15)}
 .flipbtn[data-to="drive"]{--lamp:#ff5fb8;--lamp-soft:rgba(255,95,184,.15)}
 .flipbtn[data-to="china"]{--lamp:#ee6c4d;--lamp-soft:rgba(238,108,77,.15)}
 .flipbtn[data-to="noir"]{--lamp:#7fb8d6;--lamp-soft:rgba(127,184,214,.14)}
 .flipbtn[data-to="cozy"]{--lamp:#ffb45a;--lamp-soft:rgba(255,180,90,.16)}
-.flips{display:inline-flex;gap:8px;flex-wrap:wrap}
+.flips{display:inline-flex;gap:6px;flex-wrap:wrap}
 .topright{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 main.wrap{transform-origin:center top}
 html{background:var(--bg)}
@@ -80,10 +80,10 @@ html:not([data-mode="cozy"]):not([data-mode="groove"]):not([data-mode="drive"]) 
 .eyebrow{margin:0;font:500 .7rem/1.2 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 h2{margin:0;font:400 clamp(1.7rem,1.2rem + 2.4vw,2.6rem)/1.08 var(--f-display);text-wrap:balance;overflow-wrap:anywhere}
 .codebtn{background:none;border:0;padding:0;font:inherit;color:var(--lamp);cursor:pointer;text-decoration:underline dotted}
-.replay{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;margin:.5rem 0}
-.replay label{font:500 .74rem var(--f-sans);color:var(--muted)}
-.replay .btn{min-height:28px;padding:.2rem .7rem;border-radius:999px;font-size:.7rem}
-.replay input{flex:1 1 9rem;min-width:0;background:var(--surface);color:inherit;border:1px solid #ffffff22;border-radius:.5rem;padding:.3rem .55rem;font:400 .76rem var(--f-mono)}
+.replay{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;margin:.4rem 0}
+.replay label{font:500 .66rem var(--f-body);color:var(--muted)}
+.replay .btn{min-height:24px;padding:.14rem .6rem;border-radius:999px;font-size:.62rem}
+.replay input{flex:1 1 7rem;min-width:0;background:var(--surface);color:inherit;border:1px solid #ffffff22;border-radius:.45rem;padding:.2rem .45rem;font:400 .66rem var(--f-mono)}
 .meta{margin:0;font:400 .85rem/1.4 var(--f-mono);color:var(--muted);font-variant-numeric:tabular-nums}
 .upnext{margin:0;font-size:.85rem;color:var(--muted)}
 .upnext span{color:var(--fg)}
@@ -118,8 +118,8 @@ input[type=range]{flex:1;min-width:0;height:28px;margin:0;accent-color:var(--lam
 .updnote{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:20;display:flex;align-items:center;gap:10px;padding:.45rem .5rem .45rem .9rem;border:1px solid var(--lamp);border-radius:999px;background:var(--surface-2);color:var(--fg);font:500 .78rem/1 var(--f-body);box-shadow:0 4px 18px rgba(0,0,0,.35)}
 .updnote button{min-height:30px;padding:.3rem .8rem;border-radius:999px;border:0;background:var(--lamp);color:var(--lamp-ink);font:600 .76rem/1 var(--f-body);cursor:pointer}
 button:focus-visible,input:focus-visible{outline:2px solid var(--lamp);outline-offset:2px}
-.hint{margin:0;font:400 .76rem/1.6 var(--f-mono);color:var(--muted)}
-kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--line);border-radius:5px;background:var(--surface-2);color:var(--fg)}
+.hint{margin:0;font:400 .66rem/1.6 var(--f-mono);color:var(--muted)}
+kbd{font:500 .62rem var(--f-mono);padding:.06rem .3rem;border:1px solid var(--line);border-radius:5px;background:var(--surface-2);color:var(--fg)}
 @media (max-width:520px){.shape{gap:6px}.sec-name{letter-spacing:.04em;font-size:.62rem}.btn.play{flex:1 1 100%}}
 @media (prefers-reduced-motion:reduce){.btn,.tick{transition:none}}
 </style>
@@ -185,7 +185,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v89';
+const BUILD='looplight-v90';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
