@@ -185,7 +185,7 @@ kbd{font:500 .62rem var(--f-mono);padding:.06rem .3rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v94';
+const BUILD='looplight-v95';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -1906,10 +1906,24 @@ function noirAdvance(){
   if(!noirDecks||!noirRec||noirXf)return;
   const cur=noirDecks[noirAct],nx=noirDecks[1-noirAct],n=ac.currentTime;
   if(nx.idx<0)noirLoad(nx);
+  let rescued=false;
+  /* with the screen locked the phone can refuse to start the second player; the player that is already playing is allowed to carry on, so the next song is loaded into it instead */
+  const rescue=()=>{
+    if(rescued||!noirDecks||noirDecks[noirAct]!==nx)return;rescued=true;
+    clearTimeout(cur._pt);
+    noirAct=1-noirAct;
+    cur.idx=nx.idx;nx.idx=-1;
+    try{cur.el.src=noirPath(cur.idx);cur.el.load();cur.el.currentTime=0;}catch(e){}
+    cur.el.play().then(()=>{noirFade(cur.g.gain,0.0001,0.9,ac.currentTime,0.8);noirUi();setTimeout(()=>{if(nx.idx<0)noirLoad(nx);},1900);}).catch(()=>{});
+  };
   noirFade(cur.g.gain,Math.max(0.01,cur.g.gain.value),0,n,1.6);
-  setTimeout(()=>{try{cur.el.pause();}catch(e){}cur.idx=-1;},1800);
+  clearTimeout(cur._pt);
+  cur._pt=setTimeout(()=>{try{cur.el.pause();}catch(e){}cur.idx=-1;},1800);
   noirAct=1-noirAct;noirXf=false;
-  nx.el.currentTime=0;nx.el.play().then(()=>{noirFade(nx.g.gain,0,0.9,ac.currentTime,1.6);noirUi();setTimeout(()=>{noirLoad(cur);},1900);}).catch(()=>{});
+  nx.el.currentTime=0;
+  const p=nx.el.play();
+  if(p&&p.then)p.then(()=>{if(rescued)return;noirFade(nx.g.gain,0,0.9,ac.currentTime,1.6);noirUi();setTimeout(()=>{noirLoad(cur);},1900);}).catch(rescue);
+  setTimeout(()=>{if(!rescued&&playing&&noirDecks&&noirDecks[noirAct]===nx&&nx.el.paused)rescue();},1300);
 }
 function noirStop(){if(!noirDecks)return;noirDecks.forEach(d=>{try{d.el.pause();}catch(e){}});noirXf=false;}
 function noirEnter(){noirProbe().then(()=>{if(noirRec&&playing&&recMode())noirStart();else if(noirRec===false&&recMode()){shown=null;nextNow();}});}
