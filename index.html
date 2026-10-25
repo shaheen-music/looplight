@@ -185,7 +185,7 @@ kbd{font:500 .72rem var(--f-mono);padding:.1rem .35rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v87';
+const BUILD='looplight-v88';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -1204,6 +1204,8 @@ function voiceEPiano(t,f,v){
   const m=ac.createOscillator();m.type='sine';m.frequency.setValueAtTime(f,t);
   const mg=ac.createGain();mg.gain.setValueAtTime(f*0.55,t);mg.gain.exponentialRampToValueAtTime(f*0.03,t+0.8);
   m.connect(mg);mg.connect(c.frequency);
+  /* the shimmer on the attack has faded to nothing by 0.8 s, so the modulator is switched off then instead of ringing on */
+  mg.gain.setValueAtTime(f*0.03,t+0.8);mg.gain.linearRampToValueAtTime(0,t+0.9);
   const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2200;lp.Q.value=0.3;
   const g=ac.createGain();g.gain.setValueAtTime(0.0001,t);
   g.gain.exponentialRampToValueAtTime(0.2*v,t+0.012);
@@ -1211,7 +1213,7 @@ function voiceEPiano(t,f,v){
   g.gain.exponentialRampToValueAtTime(0.1*v,t+0.45);
   g.gain.exponentialRampToValueAtTime(0.0001,t+tail);
   c.connect(lp);lp.connect(g);g.connect(bus);
-  c.start(t);m.start(t);c.stop(t+tail+0.1);m.stop(t+tail+0.1);
+  c.start(t);m.start(t);c.stop(t+tail+0.1);m.stop(t+0.95);
 }
 function voicePad(t,midis,dur,v){
   const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1000;
@@ -1658,7 +1660,7 @@ function scheduleBar(t0){
   if(T.mode==='drive'){scheduleDriveBar(T,t0,bar,sec,bi,e,st,ending,dropOut);uiQ.push({t:t0,k:'bar',bar:bar,tune:T});return;}
   T.comp.forEach((s,i)=>{
     const t=st(s),v=i===0?0.7:0.4;
-    const ch=T.chords[bi],cn=(i===0&&!S.lite&&!eco)?ch.length:3;
+    const ch=T.chords[bi],cn=(i===0&&!S.lite&&!eco&&!COARSE)?ch.length:3;
     for(let k=0;k<cn;k++)voiceEPiano(t+k*0.022,mtof(ch[ch.length-cn+k]),Math.max(0.2,v-k*0.04));
   });
   voicePad(t0,T.chords[bi].slice(0,3),e*8,1);
@@ -1671,7 +1673,7 @@ function scheduleBar(t0){
       const t=st(n.step);
       playMelody(T,t,n.midi,n.step===0?0.95:0.78);
       /* in the second half of each section a softer voice sings a third below */
-      if((sec===2||sec===4||sec===6)&&!S.lite&&!eco){const hi=T.scaleNotes.indexOf(n.midi);if(hi>=2)playMelody(T,t+0.012,T.scaleNotes[hi-2],0.42,HARM_VOICE[T.melVoice]||'kalimba');}
+      if((sec===2||sec===4||sec===6)&&!S.lite&&!eco&&(!COARSE||n.step===0)){const hi=T.scaleNotes.indexOf(n.midi);if(hi>=2)playMelody(T,t+0.012,T.scaleNotes[hi-2],0.42,HARM_VOICE[T.melVoice]||'kalimba');}
       uiQ.push({t:t,k:'note',m:n.midi});
     });
   }else if(sec===0&&bi>=2&&T.A){
