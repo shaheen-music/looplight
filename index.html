@@ -64,7 +64,7 @@ h1{margin:0;font:400 clamp(1.2rem,1.05rem + 1vw,1.6rem)/1.15 var(--f-display);le
 .starbtn{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));z-index:20;display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--lamp);cursor:pointer;opacity:.85}
 .starbtn svg,.spaceclose svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
 html:not([data-mode="cozy"]):not([data-mode="groove"]):not([data-mode="drive"]) .starbtn,html:not([data-mode="cozy"]):not([data-mode="groove"]):not([data-mode="drive"]) #spaceView{display:none}
-#spaceView{position:fixed;inset:0;z-index:100;background:#000;opacity:0;visibility:hidden;transition:opacity .6s,visibility 0s .6s}
+#spaceView{position:fixed;inset:0;height:100dvh;z-index:100;background:#000;opacity:0;visibility:hidden;transition:opacity .6s,visibility 0s .6s}
 #spaceView.open{opacity:1;visibility:visible;transition:opacity .6s}
 .spaceclose.show{opacity:1;pointer-events:auto}
 #spaceVid{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
@@ -185,7 +185,7 @@ kbd{font:500 .62rem var(--f-mono);padding:.06rem .3rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v99';
+const BUILD='looplight-v100';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -2108,6 +2108,8 @@ function fadeLive(){
 const spaceView=$('spaceView'),spaceVid=$('spaceVid'),starBtn=$('starBtn');let spaceOpen=false;
 function spaceShow(on){
   spaceOpen=on;closeBtn(false);spaceView.classList.toggle('open',on);spaceView.setAttribute('aria-hidden',on?'false':'true');
+  /* ask the browser for real full screen so its top bar goes away too (phones that allow it) */
+  try{if(on){if(!document.fullscreenElement&&spaceView.requestFullscreen){const fp=spaceView.requestFullscreen({navigationUI:'hide'});if(fp&&fp.catch)fp.catch(()=>{});}}else if(document.fullscreenElement&&document.exitFullscreen){const xp=document.exitFullscreen();if(xp&&xp.catch)xp.catch(()=>{});}}catch(e){}
   if(on){
     const want=innerWidth>innerHeight*1.1?'video/space-wide.mp4':'video/space.mp4';
     if(spaceVid.getAttribute('src')!==want){spaceVid.src=want;}
@@ -2121,6 +2123,7 @@ let closeT=0;
 function closeBtn(on){const b=$('spaceClose');clearTimeout(closeT);b.classList.toggle('show',on);if(on)closeT=setTimeout(()=>b.classList.remove('show'),3500);}
 spaceView.addEventListener('click',()=>closeBtn(!$('spaceClose').classList.contains('show')));
 $('spaceClose').addEventListener('click',e=>{e.stopPropagation();spaceShow(false);});
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&spaceOpen)spaceShow(false);});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&spaceOpen)spaceShow(false);});
 document.addEventListener('visibilitychange',()=>{if(spaceOpen){if(document.hidden)spaceVid.pause();else{const p=spaceVid.play();if(p&&p.catch)p.catch(()=>{});}}});
 spaceVid.addEventListener('error',()=>{if(spaceOpen)spaceShow(false);});
