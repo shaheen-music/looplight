@@ -174,7 +174,7 @@ kbd{font:500 .62rem var(--f-mono);padding:.06rem .3rem;border:1px solid var(--li
       <button type="button" class="tog only-drive" id="tDRadio" aria-pressed="false">Radio static</button>
     </div>
     <div class="ambvols" id="ambVols"></div>
-    <form class="replay" id="replay"><label for="codeIn">Replay a tune</label><input id="codeIn" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="e.g. 1k9x2a-3" maxlength="14"><button type="submit" class="btn">Play code</button></form>
+    <form class="replay" id="replay"><label for="codeIn">Replay a tune</label><input id="codeIn" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="e.g. 1k9x2a-3" maxlength="24"><button type="submit" class="btn">Play code</button></form>
     <button class="offbtn" id="noirOff" type="button"></button><button class="offbtn" id="noirDel" type="button"></button>
   </section>
 
@@ -185,7 +185,7 @@ kbd{font:500 .62rem var(--f-mono);padding:.06rem .3rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v98';
+const BUILD='looplight-v99';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -718,6 +718,8 @@ function composeNoir(prevPc,fixed,seed){
 
 /* ================= audio ================= */
 let ac=null,mainBus,drumMain,master,toneLP,delayNode,noiseBuf,bus,drumBus,vinylNode=null,rainNode=null,fireNode=null,thunNode=null,ambBus,outVol,pinkBuf,brownBuf,keysNode=null,cityNode=null,jstreamNode=null,jchimeNode=null,jbellNode=null,wavesNode=null,birdsNode=null,shishiNode=null;
+let TS='';try{TS=localStorage.getItem('llTest')||'';}catch(e){}
+const TEST={nodraw:/nodraw/.test(TS),nokeep:/nokeep/.test(TS),norev:/norev/.test(TS)};
 const COARSE=!!(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches);
 const S={bass:window.__COZY_BASS!==undefined?!!window.__COZY_BASS:!COARSE,vol:50,vinyl:false,rain:false,fire:false,thunder:false,keys:false,city:false,jstream:false,jchime:false,jbell:false,waves:false,birds:false,shishi:false,lite:false,auto:true};
 /* a level for each ambience sound, in percent (100 is the original level), and the saved settings */
@@ -1159,7 +1161,7 @@ function applyChain(){if(!ac||!comp_)return;const n=ac.currentTime,j=mode==='noi
 function applyBass(){applyChain();}
 function applyLite(){
   if(!ac)return;const now=ac.currentTime;
-  sendNodes.r.gain.setTargetAtTime(S.lite?0:MODES[mode].reverb,now,0.15);sendNodes.d.gain.setTargetAtTime(S.lite?0:(mode==='noir'?0.04:0.12),now,0.15);applyChain();
+  sendNodes.r.gain.setTargetAtTime((S.lite||TEST.norev)?0:MODES[mode].reverb,now,0.15);sendNodes.d.gain.setTargetAtTime((S.lite||TEST.norev)?0:(mode==='noir'?0.04:0.12),now,0.15);applyChain();
 }
 function applyTexture(){
   if(!ac)return;
@@ -1989,6 +1991,7 @@ function silentWavUrl(){
   return URL.createObjectURL(new Blob([b],{type:'audio/wav'}));
 }
 function keepAlive(go){
+  if(TEST.nokeep)return;
   try{
     if(!keepEl){keepEl=new Audio();keepEl.loop=true;keepEl.src=silentWavUrl();}
     if(go){const p=keepEl.play();if(p&&p.catch)p.catch(()=>{});}else keepEl.pause();
@@ -2473,6 +2476,7 @@ function draw(dt,time){
 let lastT=performance.now();
 function frame(now){
   processQueue();
+  if(TEST.nodraw){requestAnimationFrame(frame);return;}
   if(now-lastT>=(COARSE&&playing?42:30)){const dt=Math.min(0.08,(now-lastT)/1000);lastT=now;draw(dt,now/1000);}
   requestAnimationFrame(frame);
 }
@@ -2485,7 +2489,7 @@ layout();
 if(window.ResizeObserver)new ResizeObserver(layout).observe(cv);
 window.addEventListener('resize',layout);
 requestAnimationFrame(frame);
-$('replay').addEventListener('submit',e=>{e.preventDefault();playCode($('codeIn').value);});
+$('replay').addEventListener('submit',e=>{e.preventDefault();const v=$('codeIn').value.trim().toLowerCase();if(/^test\b/.test(v)){const f=v.replace(/^test\s*/,'').replace(/\boff\b/,'');try{localStorage.setItem('llTest',f);}catch(x){}location.reload();return;}playCode($('codeIn').value);});
 $('codeBtn').addEventListener('click',()=>{const t=tune.code;$('codeIn').value=t;try{navigator.clipboard.writeText(t).then(()=>{$('codeTxt').textContent='copied';setTimeout(()=>{$('codeTxt').textContent=tune.code;},900);},()=>{});}catch(e){}});
 if(REC[mode])recShow();
 window.__cozy={noir:()=>({decks:noirDecks,act:noirAct,list:noirList,rec:noirRec}),ps:(...a)=>playSample(...a),getBus:()=>mainBus,init:()=>{initAudio();return loadSamples();},smp:()=>smpReady()?2:0,reduction:()=>({comp:comp_&&comp_.reduction,lim:lim_&&lim_.reduction}),setMode:setMode,flip:flipCard,mode:()=>mode,mute:()=>{window.__muted=1;master.gain.value=0;},parse:parseCode,compose:compose,ctx:()=>ac,info:()=>({tune:tune,barNum:barNum,barCount:barCount})};
