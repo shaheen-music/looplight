@@ -185,7 +185,7 @@ kbd{font:500 .62rem var(--f-mono);padding:.06rem .3rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v97';
+const BUILD='looplight-v98';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -773,11 +773,11 @@ function initAudio(){
     toneLP=ac.createBiquadFilter();toneLP.type='lowpass';toneLP.frequency.value=MODES[mode].tone;toneLP.Q.value=0.5;
     const comp=ac.createDynamicsCompressor();
     comp.threshold.value=-24;comp.knee.value=20;comp.ratio.value=3;comp.attack.value=0.012;comp.release.value=0.25;
-    const makeup=ac.createGain();makeup.gain.value=1.3;
-    const lim=ac.createDynamicsCompressor();lim_=lim;comp_=comp;lim.threshold.value=-8;lim.knee.value=10;lim.ratio.value=6;lim.attack.value=0.003;lim.release.value=0.3;
+    const makeup=ac.createGain();makeup.gain.value=COARSE?1.0:1.3;
+    const lim=ac.createDynamicsCompressor();lim_=lim;comp_=comp;lim.threshold.value=COARSE?-11:-8;lim.knee.value=10;lim.ratio.value=6;lim.attack.value=0.003;lim.release.value=0.3;
     /* last stage: untouched up to 0.8, then a smooth knee that can never pass 1.0, so nothing can clip */
     const ws=ac.createWaveShaper();const curve=new Float32Array(2049);
-    for(let i=0;i<curve.length;i++){const x=i*2/(curve.length-1)-1,a=Math.abs(x),y=a<=0.8?a:0.8+0.2*Math.tanh((a-0.8)/0.2);curve[i]=x<0?-y:y;}
+    const K=COARSE?0.65:0.8;for(let i=0;i<curve.length;i++){const x=i*2/(curve.length-1)-1,a=Math.abs(x),y=a<=K?a:K+(1-K)*Math.tanh((a-K)/(1-K));curve[i]=x<0?-y:y;}
     ws.curve=curve;ws.oversample='none';
     const hp=ac.createBiquadFilter();hp.type='highpass';hp.frequency.value=hpFreq();hp.Q.value=0.6;hpNode=hp;
     master.connect(hp);hp.connect(toneLP);toneLP.connect(comp);comp.connect(makeup);makeup.connect(lim);lim.connect(ws);if(window.__COZY_TAP){window.__preAn=ac.createAnalyser();window.__preAn.fftSize=2048;lim.connect(window.__preAn);}outVol=ac.createGain();outVol.gain.value=volGain();ws.connect(outVol);outVol.connect(ac.destination);
