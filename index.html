@@ -67,6 +67,9 @@ html:not([data-mode="cozy"]):not([data-mode="groove"]):not([data-mode="drive"]) 
 #spaceView{position:fixed;inset:0;height:100dvh;z-index:100;background:#000;opacity:0;visibility:hidden;transition:opacity .6s,visibility 0s .6s}
 #spaceView.open{opacity:1;visibility:visible;transition:opacity .6s}
 .spaceclose.show{opacity:1;pointer-events:auto}
+#abyssFrame{display:none;border:0;width:100%;height:100%;pointer-events:none;background:#03131c}#spaceView.abyss #abyssFrame{display:block}#spaceView.abyss #spaceVid{display:none}
+.fishbtn{right:calc(max(14px,env(safe-area-inset-right)) + 46px)}
+.spacecredit{display:none;position:absolute;left:max(14px,env(safe-area-inset-left));bottom:max(12px,env(safe-area-inset-bottom));z-index:2;font:400 .6rem/1.4 var(--f-mono);letter-spacing:.03em;color:rgba(255,255,255,.62);text-decoration:none;text-shadow:0 1px 4px #000;max-width:70vw}#spaceView.abyss .spacecredit{display:block}.spacecredit:hover{color:#fff}
 #spaceVid{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
 .spaceclose{opacity:0;pointer-events:none;transition:opacity .35s;position:absolute;top:max(14px,env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right));width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.28);background:rgba(0,0,0,.45);color:#fff;display:inline-flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
 .offbtn+.offbtn{margin-left:4px}
@@ -125,7 +128,8 @@ kbd{font:500 .62rem var(--f-mono);padding:.06rem .3rem;border:1px solid var(--li
 @media (prefers-reduced-motion:reduce){.btn,.tick{transition:none}}
 </style>
 
-<div id="spaceView" aria-hidden="true"><video id="spaceVid" muted playsinline preload="none" tabindex="-1"></video><button class="spaceclose" id="spaceClose" type="button" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div>
+<div id="spaceView" aria-hidden="true"><video id="spaceVid" muted playsinline preload="none" tabindex="-1"></video><iframe id="abyssFrame" title="Underwater garden" tabindex="-1" aria-hidden="true"></iframe><a class="spacecredit" id="abyssCredit" href="https://github.com/Noniv/abyssal-garden" target="_blank" rel="noopener">Abyssal Garden by Maksymilian Dendura · MIT licence · github.com/Noniv/abyssal-garden</a><button class="spaceclose" id="spaceClose" type="button" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div>
+<button class="starbtn fishbtn" id="fishBtn" type="button" aria-label="Open underwater view"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12c3.2-5 9.3-6 13-2.2l5.5-3v10.4l-5.5-3C11.8 18 5.700 17 2.500 12z"/><circle cx="8" cy="11.300" r=".7" fill="currentColor"/></svg></button>
 <button class="starbtn" id="starBtn" type="button" aria-label="Open space view"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.75 6.1 6.65.7-4.97 4.5 1.4 6.5L12 17.2l-5.83 3.4 1.4-6.5L2.6 9.6l6.65-.7z"/></svg></button>
 <main class="wrap">
   <header class="top">
@@ -188,7 +192,7 @@ kbd{font:500 .62rem var(--f-mono);padding:.06rem .3rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v101';
+const BUILD='looplight-v102';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -2110,19 +2114,28 @@ function fadeLive(){
 }
 /* space view: a star button (Cozy and Sunroom only) opens a full-screen looping star-field video over everything; the close button (or Escape) returns to the app. Random start point and random mirror each time it opens. Music keeps playing. */
 const spaceView=$('spaceView'),spaceVid=$('spaceVid'),starBtn=$('starBtn');let spaceOpen=false;
-function spaceShow(on){
+function spaceShow(on,kind){
+  kind=kind||'space';spaceView.classList.toggle('abyss',on&&kind==='abyss');
   spaceOpen=on;closeBtn(false);spaceView.classList.toggle('open',on);spaceView.setAttribute('aria-hidden',on?'false':'true');
   /* ask the browser for real full screen so its top bar goes away too (phones that allow it) */
   try{if(on){if(!document.fullscreenElement&&spaceView.requestFullscreen){const fp=spaceView.requestFullscreen({navigationUI:'hide'});if(fp&&fp.catch)fp.catch(()=>{});}}else if(document.fullscreenElement&&document.exitFullscreen){const xp=document.exitFullscreen();if(xp&&xp.catch)xp.catch(()=>{});}}catch(e){}
-  if(on){
+  if(on&&kind==='abyss'){
+    try{spaceVid.pause();}catch(e){}
+    abyssFrame.src='abyss.html';
+  }else if(on){
     const want=innerWidth>innerHeight*1.1?'video/space-wide.mp4':'video/space.mp4';
     if(spaceVid.getAttribute('src')!==want){spaceVid.src=want;}
     spaceVid.loop=true;spaceVid.style.transform=Math.random()<.5?'scaleX(-1)':'none';
     const go=()=>{try{if(isFinite(spaceVid.duration))spaceVid.currentTime=Math.random()*spaceVid.duration;}catch(e){}const p=spaceVid.play();if(p&&p.catch)p.catch(()=>{});};
     if(spaceVid.readyState>0&&isFinite(spaceVid.duration))go();else{spaceVid.addEventListener('loadedmetadata',go,{once:true});const p=spaceVid.play();if(p&&p.catch)p.catch(()=>{});}
-  }else{try{spaceVid.pause();}catch(e){}starBtn.focus({preventScroll:true});}
+  }else{try{spaceVid.pause();}catch(e){}abyssFrame.src='about:blank';starBtn.focus({preventScroll:true});}
 }
 starBtn.addEventListener('click',()=>spaceShow(true));
+/* the underwater garden (a swimming 3D scene) lives in abyss.html; if the phone or browser cannot run it, its own message shows for a few seconds and then the view closes */
+const abyssFrame=$('abyssFrame');let abyssT=0;
+$('fishBtn').addEventListener('click',()=>spaceShow(true,'abyss'));
+$('abyssCredit').addEventListener('click',e=>e.stopPropagation());
+window.addEventListener('message',e=>{if(e.source===abyssFrame.contentWindow&&e.data==='abyss-fail'){clearTimeout(abyssT);abyssT=setTimeout(()=>{if(spaceOpen&&spaceView.classList.contains('abyss'))spaceShow(false);},4500);}});
 let closeT=0;
 function closeBtn(on){const b=$('spaceClose');clearTimeout(closeT);b.classList.toggle('show',on);if(on)closeT=setTimeout(()=>b.classList.remove('show'),3500);}
 spaceView.addEventListener('click',()=>closeBtn(!$('spaceClose').classList.contains('show')));
