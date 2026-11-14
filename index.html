@@ -68,9 +68,8 @@ html:not([data-mode="cozy"]):not([data-mode="groove"]):not([data-mode="drive"]) 
 #spaceView.open{opacity:1;visibility:visible;transition:opacity .6s}
 .spaceclose.show{opacity:1;pointer-events:auto}
 .fishbtn{right:calc(max(14px,env(safe-area-inset-right)) + 46px)}
-#spaceVid{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
-#spaceVid.fit{object-fit:contain;-webkit-mask-image:linear-gradient(to right,transparent,#000 7%,#000 93%,transparent),linear-gradient(to bottom,transparent,#000 7%,#000 93%,transparent);-webkit-mask-composite:source-in;mask-image:linear-gradient(to right,transparent,#000 7%,#000 93%,transparent),linear-gradient(to bottom,transparent,#000 7%,#000 93%,transparent);mask-composite:intersect}
-#trainCv{display:none;width:100%;height:100%;pointer-events:none}#spaceView.train #trainCv{display:block}#spaceView.train #spaceVid{display:none}
+#starCv{display:none;width:100%;height:100%;pointer-events:none}#spaceView.star #starCv{display:block}
+#trainCv{display:none;width:100%;height:100%;pointer-events:none}#spaceView.train #trainCv{display:block}
 .spaceclose{opacity:0;pointer-events:none;transition:opacity .35s;position:absolute;top:max(14px,env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right));width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.28);background:rgba(0,0,0,.45);color:#fff;display:inline-flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
 .offbtn+.offbtn{margin-left:4px}
 .offbtn[disabled]{opacity:.7;cursor:default}
@@ -128,7 +127,7 @@ kbd{font:500 .62rem var(--f-mono);padding:.06rem .3rem;border:1px solid var(--li
 @media (prefers-reduced-motion:reduce){.btn,.tick{transition:none}}
 </style>
 
-<div id="spaceView" aria-hidden="true"><video id="spaceVid" muted playsinline preload="none" tabindex="-1"></video><canvas id="trainCv" aria-hidden="true"></canvas><button class="spaceclose" id="spaceClose" type="button" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div>
+<div id="spaceView" aria-hidden="true"><canvas id="starCv" aria-hidden="true"></canvas><canvas id="trainCv" aria-hidden="true"></canvas><button class="spaceclose" id="spaceClose" type="button" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div>
 <button class="starbtn fishbtn" id="trainBtn" type="button" aria-label="Open train window view"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="12" rx="3"/><path d="M8 20h8M9 16l-1 4M15 16l1 4M9 8h6"/></svg></button>
 <button class="starbtn" id="starBtn" type="button" aria-label="Open space view"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.75 6.1 6.65.7-4.97 4.5 1.4 6.5L12 17.2l-5.83 3.4 1.4-6.5L2.6 9.6l6.65-.7z"/></svg></button>
 <main class="wrap">
@@ -192,7 +191,7 @@ kbd{font:500 .62rem var(--f-mono);padding:.06rem .3rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v109';
+const BUILD='looplight-v110';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -2113,26 +2112,52 @@ function fadeLive(){
   live.length=0;uiQ.length=0;mediaGen++;
 }
 /* space view: a star button (Cozy and Sunroom only) opens a full-screen looping star-field video over everything; the close button (or Escape) returns to the app. Random start point and random mirror each time it opens. Music keeps playing. */
-const spaceView=$('spaceView'),spaceVid=$('spaceVid'),starBtn=$('starBtn');let spaceOpen=false;
+const spaceView=$('spaceView'),starBtn=$('starBtn');let spaceOpen=false;
 function spaceShow(on,kind){
-  kind=kind||'space';spaceView.classList.toggle('train',on&&kind==='train');
+  kind=kind||'space';spaceView.classList.toggle('train',on&&kind==='train');spaceView.classList.toggle('star',on&&kind!=='train');
   spaceOpen=on;closeBtn(false);spaceView.classList.toggle('open',on);spaceView.setAttribute('aria-hidden',on?'false':'true');
   /* ask the browser for real full screen so its top bar goes away too (phones that allow it) */
   try{if(on){if(!document.fullscreenElement&&spaceView.requestFullscreen){const fp=spaceView.requestFullscreen({navigationUI:'hide'});if(fp&&fp.catch)fp.catch(()=>{});}}else if(document.fullscreenElement&&document.exitFullscreen){const xp=document.exitFullscreen();if(xp&&xp.catch)xp.catch(()=>{});}}catch(e){}
-  if(on&&kind==='train'){try{spaceVid.pause();}catch(e){}trainStart();}
-  else if(on){
-    trainStop();
-    const wide=innerWidth>innerHeight*1.1,want='video/space'+(wide?'-wide':'')+'.mp4';
-    if(spaceVid.getAttribute('src')!==want){spaceVid.src=want;}
-    spaceVid.loop=true;spaceVid.style.transform=Math.random()<.5?'scaleX(-1)':'none';
-    const go=()=>{try{if(isFinite(spaceVid.duration))spaceVid.currentTime=Math.random()*spaceVid.duration;}catch(e){}const p=spaceVid.play();if(p&&p.catch)p.catch(()=>{});};
-    if(spaceVid.readyState>0&&isFinite(spaceVid.duration))go();else{spaceVid.addEventListener('loadedmetadata',go,{once:true});const p=spaceVid.play();if(p&&p.catch)p.catch(()=>{});}
-  }else{try{spaceVid.pause();}catch(e){}trainStop();starBtn.focus({preventScroll:true});}
-  spaceFit();
+  if(on&&kind==='train'){starStop();trainStart();}
+  else if(on){trainStop();starStart();}
+  else{trainStop();starStop();starBtn.focus({preventScroll:true});}
 }
-/* the stars video keeps its proportions in a window of any shape: when the window is much wider or taller than the video, it is shown whole with soft edges instead of being cropped and blown up */
-function spaceFit(){const wide=innerWidth>innerHeight*1.1,va=wide?1600/900:432/936,wa=innerWidth/Math.max(1,innerHeight);spaceVid.classList.toggle('fit',Math.abs(Math.log(va/wa))>0.22);}
-addEventListener('resize',()=>{if(spaceOpen)spaceFit();});
+/* flying through stars: drawn live, so it fills a window of any shape without cropping or stretching */
+const starCv=$('starCv');let starRaf=0,starT=0,starClock=0,starW=0,starH=0,starSkip=false,starAvg=0,starFlip=0;
+const starMod=(a,b)=>((a%b)+b)%b;
+const STARS=(()=>{let sd=77;const r=()=>{sd=(sd+0x6D2B79F5)>>>0;let t=sd;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;},n=COARSE?520:900,a=[];for(let i=0;i<n;i++){const c=r();a.push({x:(r()*2-1),y:(r()*2-1),z:0.04+r()*0.96,b:0.35+r()*0.65,g:c<0.14?1:c<0.24?2:0});}return a;})();
+function starSize(){const cw=starCv.clientWidth,ch=starCv.clientHeight,d=Math.min(devicePixelRatio||1,1.5,Math.sqrt((COARSE?0.8e6:1.1e6)/Math.max(1,cw*ch))),w=Math.max(2,Math.round(cw*d)),h=Math.max(2,Math.round(ch*d));if(w===starW&&h===starH)return;starW=w;starH=h;starCv.width=w;starCv.height=h;}
+function starDraw(t){
+  const x=starCv.getContext('2d'),w=starW,h=starH,cx=w/2,cy=h/2,S=Math.max(w,h)*0.5,sc=Math.max(1,Math.min(w,h)/500),ang=t*0.012,ca=Math.cos(ang),sa=Math.sin(ang);
+  x.fillStyle='#000';x.fillRect(0,0,w,h);x.lineCap='round';
+  const col=['#ffffff','#cfe0ff','#ffe6c8'];
+  for(let g=0;g<3;g++){
+    x.strokeStyle=col[g];
+    for(const q of STARS){
+      if(q.g!==g)continue;
+      const z=starMod(q.z-t*0.022,1)*0.7+0.3,z2=z+0.004;
+      let px=q.x/z*S*0.6,py=q.y/z*S*0.6,qx=q.x/z2*S*0.6,qy=q.y/z2*S*0.6;
+      const rx=px*ca-py*sa,ry=px*sa+py*ca,rx2=qx*ca-qy*sa,ry2=qx*sa+qy*ca;
+      const X=cx+rx,Y=cy+ry;if(X<-4||X>w+4||Y<-4||Y>h+4)continue;
+      const a=q.b*Math.min(1,(1.0-z)*9)*Math.min(1,(z-0.3)*9)*(0.75+0.25*Math.sin(t*1.7+q.x*40));
+      x.globalAlpha=a;x.lineWidth=(0.6+(1-z)*1.5)*sc*(q.b>0.9?1.3:1);x.beginPath();x.moveTo(cx+rx2,cy+ry2);x.lineTo(X,Y);x.stroke();
+    }
+  }
+  x.globalAlpha=1;
+}
+function starLoop(t){
+  if(!spaceOpen){starRaf=0;return;}
+  starRaf=requestAnimationFrame(starLoop);
+  if(document.hidden){starT=0;return;}
+  if(!starT)starT=t-16;
+  if(starSkip&&(starFlip^=1))return;
+  const p0=performance.now();
+  starClock+=Math.min(0.1,(t-starT)/1000);starT=t;starSize();starDraw(starClock);
+  starAvg=starAvg*0.9+(performance.now()-p0)*0.1;if(starAvg>9)starSkip=true;
+}
+function starStart(){starT=0;starSkip=false;starAvg=0;starClock=Math.random()*100;starSize();if(!starRaf)starRaf=requestAnimationFrame(starLoop);}
+function starStop(){if(starRaf){cancelAnimationFrame(starRaf);starRaf=0;}}
+addEventListener('resize',()=>{if(spaceOpen&&starRaf)starSize();});
 starBtn.addEventListener('click',()=>spaceShow(true));
 $('trainBtn').addEventListener('click',()=>spaceShow(true,'train'));
 /* night train view: a rainy window with the hills and pines rushing past, poles flashing by, a warm lamp in the room. The still parts are drawn once per window size; each frame only moves them. */
@@ -2227,8 +2252,6 @@ spaceView.addEventListener('click',()=>closeBtn(!$('spaceClose').classList.conta
 $('spaceClose').addEventListener('click',e=>{e.stopPropagation();spaceShow(false);});
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&spaceOpen)spaceShow(false);});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&spaceOpen)spaceShow(false);});
-document.addEventListener('visibilitychange',()=>{if(spaceOpen){if(document.hidden)spaceVid.pause();else{const p=spaceVid.play();if(p&&p.catch)p.catch(()=>{});}}});
-spaceVid.addEventListener('error',()=>{if(spaceOpen)spaceShow(false);});
 function spaceSync(){if(spaceOpen&&mode!=='cozy'&&mode!=='groove'&&mode!=='drive')spaceShow(false);}
 function switchModeCore(m){
   recSwap(mode,m);
