@@ -69,6 +69,8 @@ html:not([data-mode="cozy"]):not([data-mode="groove"]):not([data-mode="drive"]) 
 .spaceclose.show{opacity:1;pointer-events:auto}
 .fishbtn{right:calc(max(14px,env(safe-area-inset-right)) + 46px)}
 #spaceVid{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+#spaceVid.fit{object-fit:contain;-webkit-mask-image:linear-gradient(to right,transparent,#000 7%,#000 93%,transparent),linear-gradient(to bottom,transparent,#000 7%,#000 93%,transparent);-webkit-mask-composite:source-in;mask-image:linear-gradient(to right,transparent,#000 7%,#000 93%,transparent),linear-gradient(to bottom,transparent,#000 7%,#000 93%,transparent);mask-composite:intersect}
+#synthCv{display:none;width:100%;height:100%;pointer-events:none}#spaceView.synth #synthCv{display:block}#spaceView.synth #spaceVid{display:none}
 .spaceclose{opacity:0;pointer-events:none;transition:opacity .35s;position:absolute;top:max(14px,env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right));width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.28);background:rgba(0,0,0,.45);color:#fff;display:inline-flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
 .offbtn+.offbtn{margin-left:4px}
 .offbtn[disabled]{opacity:.7;cursor:default}
@@ -126,8 +128,8 @@ kbd{font:500 .62rem var(--f-mono);padding:.06rem .3rem;border:1px solid var(--li
 @media (prefers-reduced-motion:reduce){.btn,.tick{transition:none}}
 </style>
 
-<div id="spaceView" aria-hidden="true"><video id="spaceVid" muted playsinline preload="none" tabindex="-1"></video><button class="spaceclose" id="spaceClose" type="button" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div>
-<button class="starbtn fishbtn" id="auroraBtn" type="button" aria-label="Open aurora view"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9c3-4 6-4 9 0s6 4 9 0M3 14c3-4 6-4 9 0s6 4 9 0M3 19c3-4 6-4 9 0s6 4 9 0"/></svg></button>
+<div id="spaceView" aria-hidden="true"><video id="spaceVid" muted playsinline preload="none" tabindex="-1"></video><canvas id="synthCv" aria-hidden="true"></canvas><button class="spaceclose" id="spaceClose" type="button" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div>
+<button class="starbtn fishbtn" id="synthBtn" type="button" aria-label="Open synthwave view"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 13a5 5 0 0110 0M3 13h18M12 13l-4 7M12 13v7M12 13l4 7M5 17h14"/></svg></button>
 <button class="starbtn" id="starBtn" type="button" aria-label="Open space view"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.75 6.1 6.65.7-4.97 4.5 1.4 6.5L12 17.2l-5.83 3.4 1.4-6.5L2.6 9.6l6.65-.7z"/></svg></button>
 <main class="wrap">
   <header class="top">
@@ -190,7 +192,7 @@ kbd{font:500 .62rem var(--f-mono);padding:.06rem .3rem;border:1px solid var(--li
 <script>
 (function(){
 'use strict';
-const BUILD='looplight-v104';
+const BUILD='looplight-v105';
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let R=Math.random;
@@ -2113,20 +2115,79 @@ function fadeLive(){
 /* space view: a star button (Cozy and Sunroom only) opens a full-screen looping star-field video over everything; the close button (or Escape) returns to the app. Random start point and random mirror each time it opens. Music keeps playing. */
 const spaceView=$('spaceView'),spaceVid=$('spaceVid'),starBtn=$('starBtn');let spaceOpen=false;
 function spaceShow(on,kind){
-  kind=kind||'space';
+  kind=kind||'space';spaceView.classList.toggle('synth',on&&kind==='synth');
   spaceOpen=on;closeBtn(false);spaceView.classList.toggle('open',on);spaceView.setAttribute('aria-hidden',on?'false':'true');
   /* ask the browser for real full screen so its top bar goes away too (phones that allow it) */
   try{if(on){if(!document.fullscreenElement&&spaceView.requestFullscreen){const fp=spaceView.requestFullscreen({navigationUI:'hide'});if(fp&&fp.catch)fp.catch(()=>{});}}else if(document.fullscreenElement&&document.exitFullscreen){const xp=document.exitFullscreen();if(xp&&xp.catch)xp.catch(()=>{});}}catch(e){}
-  if(on){
-    const wide=innerWidth>innerHeight*1.1,nm=kind==='aurora'?'aurora':'space',want='video/'+nm+(wide?'-wide':'')+'.mp4';
+  if(on&&kind==='synth'){try{spaceVid.pause();}catch(e){}synthStart();}
+  else if(on){
+    synthStop();
+    const wide=innerWidth>innerHeight*1.1,want='video/space'+(wide?'-wide':'')+'.mp4';
     if(spaceVid.getAttribute('src')!==want){spaceVid.src=want;}
     spaceVid.loop=true;spaceVid.style.transform=Math.random()<.5?'scaleX(-1)':'none';
     const go=()=>{try{if(isFinite(spaceVid.duration))spaceVid.currentTime=Math.random()*spaceVid.duration;}catch(e){}const p=spaceVid.play();if(p&&p.catch)p.catch(()=>{});};
     if(spaceVid.readyState>0&&isFinite(spaceVid.duration))go();else{spaceVid.addEventListener('loadedmetadata',go,{once:true});const p=spaceVid.play();if(p&&p.catch)p.catch(()=>{});}
-  }else{try{spaceVid.pause();}catch(e){}starBtn.focus({preventScroll:true});}
+  }else{try{spaceVid.pause();}catch(e){}synthStop();starBtn.focus({preventScroll:true});}
+  spaceFit();
 }
+/* the stars video keeps its proportions in a window of any shape: when the window is much wider or taller than the video, it is shown whole with soft edges instead of being cropped and blown up */
+function spaceFit(){const wide=innerWidth>innerHeight*1.1,va=wide?1600/900:432/936,wa=innerWidth/Math.max(1,innerHeight);spaceVid.classList.toggle('fit',Math.abs(Math.log(va/wa))>0.22);}
+addEventListener('resize',()=>{if(spaceOpen)spaceFit();});
 starBtn.addEventListener('click',()=>spaceShow(true));
-$('auroraBtn').addEventListener('click',()=>spaceShow(true,'aurora'));
+$('synthBtn').addEventListener('click',()=>spaceShow(true,'synth'));
+/* synthwave view: a neon grid floor rolling toward you under a striped retro sun that sits still on the horizon. Drawn with a few dozen lines on a canvas, so it fits any window and costs almost nothing. */
+const synthCv=$('synthCv');let synthRaf=0,synthT=0,synthOff=0,synthSun=null,synthW=0,synthH=0;
+function synthSize(){
+  const d=Math.min(devicePixelRatio||1,1.5),w=Math.max(2,Math.round(synthCv.clientWidth*d)),h=Math.max(2,Math.round(synthCv.clientHeight*d));
+  if(w===synthW&&h===synthH)return;synthW=w;synthH=h;synthCv.width=w;synthCv.height=h;
+  /* the striped sun is drawn once: a gradient disc with bands cut out of its lower half */
+  const hy=h*0.56,R=Math.min(w*0.27,h*0.36),c=document.createElement('canvas');c.width=Math.ceil(R*2);c.height=Math.ceil(R);
+  const x=c.getContext('2d'),g=x.createLinearGradient(0,0,0,R);g.addColorStop(0,'#ffe066');g.addColorStop(0.5,'#ff8a5c');g.addColorStop(1,'#ff2e93');
+  x.fillStyle=g;x.beginPath();x.arc(R,R,R,Math.PI,0);x.closePath();x.fill();
+  x.globalCompositeOperation='destination-out';
+  for(let k=0;k<7;k++){const y=R*(0.40+0.088*(k+0.5)),th=R*(0.012+0.011*k);x.fillRect(0,y,R*2,th);}
+  synthSun={c:c,R:R,hy:hy};
+}
+function synthDraw(dt){
+  const x=synthCv.getContext('2d'),w=synthW,h=synthH,hy=synthSun.hy,R=synthSun.R,cx=w/2;
+  const sky=x.createLinearGradient(0,0,0,hy);sky.addColorStop(0,'#090219');sky.addColorStop(0.45,'#2a0a52');sky.addColorStop(0.8,'#8a1fa6');sky.addColorStop(1,'#ff3d9a');
+  x.fillStyle=sky;x.fillRect(0,0,w,hy);
+  /* a few still stars */
+  x.fillStyle='rgba(255,255,255,.7)';for(let i=0;i<38;i++){const sx=((i*7919)%1000)/1000*w,sy=((i*104729)%1000)/1000*hy*0.62;x.fillRect(sx,sy,1.4,1.4);}
+  /* the sun's glow, then the sun */
+  const gl=x.createRadialGradient(cx,hy,R*0.7,cx,hy,R*1.9);gl.addColorStop(0,'rgba(255,80,160,.55)');gl.addColorStop(1,'rgba(255,80,160,0)');
+  x.fillStyle=gl;x.fillRect(0,0,w,hy);
+  x.drawImage(synthSun.c,cx-R,hy-R);
+  /* floor */
+  const fl=x.createLinearGradient(0,hy,0,h);fl.addColorStop(0,'#2b0638');fl.addColorStop(0.15,'#14021f');fl.addColorStop(1,'#07010d');
+  x.fillStyle=fl;x.fillRect(0,hy,w,h-hy);
+  /* grid: lines across the floor roll toward you, lines running away meet at the horizon */
+  synthOff=(synthOff+dt*0.55)%1;const N=15,fh=h-hy;
+  x.lineCap='round';
+  for(let i=0;i<N;i++){
+    const s=(i+synthOff)/N,y=hy+fh*Math.pow(s,2.3),a=Math.min(1,s*2.2);
+    x.strokeStyle='rgba(255,46,200,'+(0.22*a).toFixed(3)+')';x.lineWidth=5*(0.4+s);x.beginPath();x.moveTo(0,y);x.lineTo(w,y);x.stroke();
+    x.strokeStyle='rgba(255,120,230,'+(0.95*a).toFixed(3)+')';x.lineWidth=1.3*(0.5+s);x.beginPath();x.moveTo(0,y);x.lineTo(w,y);x.stroke();
+  }
+  const V=22,step=w*0.16;
+  for(let i=-V;i<=V;i++){
+    const xb=cx+i*step;
+    x.strokeStyle='rgba(255,46,200,0.2)';x.lineWidth=5;x.beginPath();x.moveTo(cx,hy);x.lineTo(xb,h);x.stroke();
+    x.strokeStyle='rgba(120,230,255,0.85)';x.lineWidth=1.3;x.beginPath();x.moveTo(cx,hy);x.lineTo(xb,h);x.stroke();
+  }
+  /* the horizon line glows */
+  const hz=x.createLinearGradient(0,hy-h*0.02,0,hy+h*0.05);hz.addColorStop(0,'rgba(255,90,200,0)');hz.addColorStop(0.35,'rgba(255,150,230,.9)');hz.addColorStop(1,'rgba(255,60,180,0)');
+  x.fillStyle=hz;x.fillRect(0,hy-h*0.02,w,h*0.07);
+}
+function synthLoop(t){
+  if(!spaceOpen){synthRaf=0;return;}
+  synthRaf=requestAnimationFrame(synthLoop);
+  if(document.hidden||t-synthT<33)return;
+  const dt=Math.min(0.1,(t-synthT)/1000||0.033);synthT=t;synthSize();synthDraw(dt);
+}
+function synthStart(){synthT=0;synthOff=Math.random();synthSize();if(!synthRaf)synthRaf=requestAnimationFrame(synthLoop);}
+function synthStop(){if(synthRaf){cancelAnimationFrame(synthRaf);synthRaf=0;}}
+addEventListener('resize',()=>{if(spaceOpen&&synthRaf)synthSize();});
 let closeT=0;
 function closeBtn(on){const b=$('spaceClose');clearTimeout(closeT);b.classList.toggle('show',on);if(on)closeT=setTimeout(()=>b.classList.remove('show'),3500);}
 spaceView.addEventListener('click',()=>closeBtn(!$('spaceClose').classList.contains('show')));
